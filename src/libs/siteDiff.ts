@@ -199,7 +199,7 @@ export const getComparePath = (filePath: string, siteUrl: string): string =>
       const siteBase = siteUrl
         .replace('http://', '')
         .replace('https://', '')
-        .replace('.', '\.');
+        .replace('.', '.');
 
       const regex = new RegExp(`^${siteBase}\.(clone|cache)`);
 
@@ -282,5 +282,3 @@ export const genSlackReportMsg = (report: any, website: string): string =>
   `*${report.ignoredFiles.length} ignored files*\n` +
   `${buildMsgFileList(report.ignoredFiles)}` +
   `${genDiffMsg(report)}`;
-
-

@@ -1,20 +1,17 @@
-
-
 export enum SlackTypeKeys {
   SLACK_MESSAGE_INCOMING = 'SLACK_MESSAGE_INCOMING',
   SLACK_MESSAGE_OUTGOING = 'SLACK_MESSAGE_OUTGOING',
   SLACK_DIRECT_COMMAND = 'SLACK_MESSAGE_DIRECT_COMMAND'
 }
 
-
 export interface ISlackMessage {
-  type: string,
-  channel: string,
-  user: string,
-  text: string,
-  ts: string,
-  source_team: string,
-  team: string
+  type: string;
+  channel: string;
+  user: string;
+  text: string;
+  ts: string;
+  source_team: string;
+  team: string;
 }
 
 /**
@@ -22,25 +19,25 @@ export interface ISlackMessage {
  */
 
 export interface ISlackMessageIncomingAction {
-  type: SlackTypeKeys.SLACK_MESSAGE_INCOMING,
-  payload: ISlackMessage
+  type: SlackTypeKeys.SLACK_MESSAGE_INCOMING;
+  payload: ISlackMessage;
 }
 
 export interface ISlackMessageOutgoingAction {
-  type: SlackTypeKeys.SLACK_MESSAGE_OUTGOING,
+  type: SlackTypeKeys.SLACK_MESSAGE_OUTGOING;
   payload: {
-    msg: string,
-    channel: string
-  }
+    msg: string;
+    channel: string;
+  };
 }
 
 export interface ISlackDirectCommandAction {
-  type: SlackTypeKeys.SLACK_DIRECT_COMMAND,
+  type: SlackTypeKeys.SLACK_DIRECT_COMMAND;
   payload: {
-    msg: ISlackMessage,
-    cmd: string,
-    args: string[]
-  }
+    msg: ISlackMessage;
+    cmd: string;
+    args: string[];
+  };
 }
 
 /**
@@ -51,17 +48,14 @@ export function slackMessageIncoming(message: ISlackMessage): ISlackMessageIncom
   return {
     type: SlackTypeKeys.SLACK_MESSAGE_INCOMING,
     payload: message
-  }
+  };
 }
 
-export function slackMessageOutgoing(
-  msg: string,
-  channel: string
-): ISlackMessageOutgoingAction {
+export function slackMessageOutgoing(msg: string, channel: string): ISlackMessageOutgoingAction {
   return {
     type: SlackTypeKeys.SLACK_MESSAGE_OUTGOING,
     payload: { msg, channel }
-  }
+  };
 }
 
 export function slackDirectCommand(
@@ -72,6 +66,5 @@ export function slackDirectCommand(
   return {
     type: SlackTypeKeys.SLACK_DIRECT_COMMAND,
     payload: { msg, cmd, args }
-  }
+  };
 }
-

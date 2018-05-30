@@ -1,16 +1,15 @@
-
 import { SagaIterator } from 'redux-saga';
 import { takeEvery, call, put, apply } from 'redux-saga/effects';
 
-import { 
+import {
   SlackTypeKeys,
-  ISlackMessageIncomingAction, 
+  ISlackMessageIncomingAction,
   ISlackMessageOutgoingAction,
-  ISlackDirectCommandAction, 
+  ISlackDirectCommandAction,
   ISlackMessage,
   slackDirectCommand,
   slackMessageOutgoing
-} from '../actions'
+} from '../actions';
 import {
   messageIsNotEdit,
   isChannelWhitelisted,
@@ -18,51 +17,49 @@ import {
   parseMessage,
   parseCmdAndArgs,
   replyDirect
-} from '../libs'
-import { getSlackClient } from '../slack'
-
+} from '../libs';
+import { getSlackClient } from '../slack';
 
 function* handleMessageIncoming(action: ISlackMessageIncomingAction) {
-  const msg: ISlackMessage = action.payload
-  const isWhitelisted = yield call(isChannelWhitelisted, msg)
-  const isMention = yield call(isPureDirectMention, msg)
-  const isNotEdit = yield call(messageIsNotEdit, msg)
- 
+  const msg: ISlackMessage = action.payload;
+  const isWhitelisted = yield call(isChannelWhitelisted, msg);
+  const isMention = yield call(isPureDirectMention, msg);
+  const isNotEdit = yield call(messageIsNotEdit, msg);
+
   if (!isWhitelisted || !isMention || !isNotEdit) {
-    return
+    return;
   }
 
-  const parsedMessage = yield call(parseMessage, msg)
-  const { cmd, args } = yield call(parseCmdAndArgs, parsedMessage)
+  const parsedMessage = yield call(parseMessage, msg);
+  const { cmd, args } = yield call(parseCmdAndArgs, parsedMessage);
 
   if (!cmd) {
-    return
+    return;
   }
 
-  yield put(slackDirectCommand(msg, cmd, args))
+  yield put(slackDirectCommand(msg, cmd, args));
 }
 
 function* handleMessageOutgoing(action: ISlackMessageOutgoingAction) {
-  const { msg, channel } = action.payload
-  const client = yield call(getSlackClient)
+  const { msg, channel } = action.payload;
+  const client = yield call(getSlackClient);
 
-  yield apply(client, client.sendMessage, [msg, channel])
+  yield apply(client, client.sendMessage, [msg, channel]);
 }
 
 function* handleDirectCommand(action: ISlackDirectCommandAction) {
-  const { msg, cmd, args } = action.payload
-  const { channel } = msg
+  const { msg, cmd, args } = action.payload;
+  const { channel } = msg;
 
   switch (cmd) {
     case 'ping':
-      const reply = replyDirect(msg, 'pong')
-      return yield put(slackMessageOutgoing(reply, channel))
+      const reply = replyDirect(msg, 'pong');
+      return yield put(slackMessageOutgoing(reply, channel));
   }
-
 }
 
 export function* slackSaga(): SagaIterator {
-  yield takeEvery(SlackTypeKeys.SLACK_MESSAGE_INCOMING, handleMessageIncoming)
-  yield takeEvery(SlackTypeKeys.SLACK_MESSAGE_OUTGOING, handleMessageOutgoing)
-  yield takeEvery(SlackTypeKeys.SLACK_DIRECT_COMMAND, handleDirectCommand)
+  yield takeEvery(SlackTypeKeys.SLACK_MESSAGE_INCOMING, handleMessageIncoming);
+  yield takeEvery(SlackTypeKeys.SLACK_MESSAGE_OUTGOING, handleMessageOutgoing);
+  yield takeEvery(SlackTypeKeys.SLACK_DIRECT_COMMAND, handleDirectCommand);
 }
