@@ -15,13 +15,13 @@ export function siteDiffStart(): ISiteDiffStartAction {
 }
 
 export interface ISiteDiffFinishAction {
-  type: SiteDiffTypeKeys.SITE_DIFF_FINISH
+  type: SiteDiffTypeKeys.SITE_DIFF_FINISH;
 }
 
 export function siteDiffFinish(): ISiteDiffFinishAction {
   return {
     type: SiteDiffTypeKeys.SITE_DIFF_FINISH
-  }
+  };
 }
 
 export interface ISiteDiffIntervalStartAction {

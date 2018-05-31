@@ -1,10 +1,7 @@
-import {
-  SiteDiffTypeKeys
-} from '../actions'
-
+import { SiteDiffTypeKeys } from '../actions';
 
 export interface ISiteDiffState {
-  working: boolean
+  working: boolean;
 }
 
 export const INITIAL_STATE: ISiteDiffState = {
@@ -17,12 +14,12 @@ export const siteDiffReducer = (state = INITIAL_STATE, action): ISiteDiffState =
       return {
         ...state,
         working: true
-      }
+      };
     case SiteDiffTypeKeys.SITE_DIFF_FINISH:
       return {
         ...state,
         working: false
-      }
+      };
     default:
       return state;
   }

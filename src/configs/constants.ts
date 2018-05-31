@@ -30,9 +30,5 @@ export const SITE_CACHE_DIR = path.resolve(SITE_BASE_DIR, `${SITE_BASE_NAME}.cac
 export const SITE_SNAPSHOTS_DIR = path.resolve(SITE_BASE_DIR, 'snapshots');
 export const SITE_IGNORED_FILES = siteDiff.ignoredFiles;
 
-export const LOG_LEVEL_CONSOLE = logLevels && logLevels.console
-    ? logLevels.console
-    : 'info';
-export const LOG_LEVEL_FILE = logLevels && logLevels.file
-    ? logLevels.file
-    : 'info';
+export const LOG_LEVEL_CONSOLE = logLevels && logLevels.console ? logLevels.console : 'info';
+export const LOG_LEVEL_FILE = logLevels && logLevels.file ? logLevels.file : 'info';

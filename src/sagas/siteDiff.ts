@@ -64,36 +64,34 @@ export function* initSiteDiff() {
     const empty = yield call(isDirectoryEmpty, SITE_CACHE_DIR);
 
     if (!empty) return;
-  
-    logger.debug('initSiteDiff - Cache is empty. Creating cache')
-  
+
+    logger.debug('initSiteDiff - Cache is empty. Creating cache');
+
     yield call(fse.remove, SITE_CLONE_DIR);
     yield call(cloneAndUnminifySite);
     yield call(setCloneAsCache);
-  
-    logger.debug('initSiteDiff - Cache created')
+
+    logger.debug('initSiteDiff - Cache created');
   } catch (err) {
-    logger.error('initSiteDiff - critical error')
-    logger.error(err)
+    logger.error('initSiteDiff - critical error');
+    logger.error(err);
   }
 }
 
 export function* handleSiteDiffStart() {
   try {
-
-    logger.info(`SITE_DIFF - Checking ${SITE_URL} for changes`)
+    logger.info(`SITE_DIFF - Checking ${SITE_URL} for changes`);
     logger.debug('handleSiteDiffStart - starting report');
     const report = yield call(buildSiteDiffReport);
-  
+
     logger.debug('handleSiteDiffStart - analyzing report');
     yield call(analyzeSiteDiffReport, report);
-  
+
     logger.debug('handleSiteDiffStart - firing SITE_DIFF_FINISH');
     yield put(siteDiffFinish());
-
   } catch (err) {
-    logger.error('handleSiteDiffStart - critical error')
-    logger.error(err)
+    logger.error('handleSiteDiffStart - critical error');
+    logger.error(err);
   }
 }
 
@@ -108,7 +106,7 @@ export function* buildSiteDiffReport() {
 
   const cloneFilesProcessed = yield call(processFileList, cloneFiles, SITE_URL);
 
-  logger.debug('buildSiteDiffReport - generating report')
+  logger.debug('buildSiteDiffReport - generating report');
   const report = yield call(
     generateReport,
     cacheFilesProcessed,
@@ -116,8 +114,8 @@ export function* buildSiteDiffReport() {
     SITE_IGNORED_FILES
   );
 
-  logger.debug('buildSiteDiffReport - finished, returning report')
-  return report;  
+  logger.debug('buildSiteDiffReport - finished, returning report');
+  return report;
 }
 
 export function* analyzeSiteDiffReport(report) {
@@ -126,23 +124,22 @@ export function* analyzeSiteDiffReport(report) {
   const hasChanged = yield call(hasReportChanged, report);
 
   if (hasChanged) {
+    logger.info('SITE_DIFF - Change detected');
 
-    logger.info('SITE_DIFF - Change detected')
- 
     if (AWS_ENABLED) {
-      logger.info('SITE_DIFF - uploading HTML diff to S3 bucket')
+      logger.info('SITE_DIFF - uploading HTML diff to S3 bucket');
       report.location = yield call(uploadSiteDiffToS3, report);
     }
 
     yield call(createSnapshot, SITE_CACHE_DIR, SITE_CLONE_DIR, SITE_SNAPSHOTS_DIR, report);
-    
-    logger.debug('analyzeSiteDiffReport - setting clone as cache')
+
+    logger.debug('analyzeSiteDiffReport - setting clone as cache');
     yield call(setCloneAsCache);
 
-    logger.info('SITE_DIFF - Sending alert to slack')
+    logger.info('SITE_DIFF - Sending alert to slack');
     yield call(communicateSiteChangedToSlack, report);
   } else {
-    logger.info('SITE_DIFF - No change detected')
+    logger.info('SITE_DIFF - No change detected');
   }
 }
 
@@ -170,12 +167,12 @@ export function* communicateSiteChangedToSlack(report) {
 export function* handleSiteDiffIntervalStart() {
   while (true) {
     yield call(delay, SITE_POLL_INTERVAL);
-    
+
     const isWorking = yield select(getWorking);
     if (isWorking) {
-      logger.debug('handleSiteDiffIntervalStart - Previous run still going, skipping site diff')
+      logger.debug('handleSiteDiffIntervalStart - Previous run still going, skipping site diff');
     } else {
-      logger.debug('handleSiteDiffIntervalStart - No previous run, starting site diff')
+      logger.debug('handleSiteDiffIntervalStart - No previous run, starting site diff');
       yield put(siteDiffStart());
     }
   }

@@ -5,7 +5,7 @@ import { WORKING_DIR, LOG_LEVEL_CONSOLE, LOG_LEVEL_FILE } from './constants';
 
 export const LOG_FILE_NAME = 'log.txt';
 export const LOG_FILE_PATH = path.resolve(WORKING_DIR, LOG_FILE_NAME);
-export const logger = new (winston.Logger)();
+export const logger = new winston.Logger();
 
 logger.add(winston.transports.Console, {
   level: LOG_LEVEL_CONSOLE,

@@ -19,7 +19,7 @@ import {
   replyDirect
 } from '../libs';
 import { getSlackClient } from '../slack';
-import { logger } from '../configs'
+import { logger } from '../configs';
 
 function* handleMessageIncoming(action: ISlackMessageIncomingAction) {
   const msg: ISlackMessage = action.payload;
