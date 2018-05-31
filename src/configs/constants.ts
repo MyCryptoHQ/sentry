@@ -6,7 +6,7 @@ import { IUserConfig } from './types';
 
 const configPath: string = path.resolve(process.argv[2]);
 const USER_CONFIG: IUserConfig = require(configPath);
-const { slack, aws, siteDiff } = USER_CONFIG;
+const { slack, aws, siteDiff, logLevels } = USER_CONFIG;
 const siteBaseName = getSiteBaseName(siteDiff.url);
 
 export const APP_NAME = 'sentry';
@@ -29,3 +29,10 @@ export const SITE_CLONE_DIR = path.resolve(SITE_BASE_DIR, `${SITE_BASE_NAME}.clo
 export const SITE_CACHE_DIR = path.resolve(SITE_BASE_DIR, `${SITE_BASE_NAME}.cache`);
 export const SITE_SNAPSHOTS_DIR = path.resolve(SITE_BASE_DIR, 'snapshots');
 export const SITE_IGNORED_FILES = siteDiff.ignoredFiles;
+
+export const LOG_LEVEL_CONSOLE = logLevels && logLevels.console
+    ? logLevels.console
+    : 'info';
+export const LOG_LEVEL_FILE = logLevels && logLevels.file
+    ? logLevels.file
+    : 'info';

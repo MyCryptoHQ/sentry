@@ -1,11 +1,20 @@
 import { combineReducers } from 'redux';
 
-// import { configReducer as config } from './config'
-import { siteDiffReducer } from './siteDiff';
-import { slackReducer } from './slack';
+import { 
+  siteDiffReducer as siteDiff,
+  ISiteDiffState
+} from './siteDiff';
+import { 
+  slackReducer as slack,
+  ISlackState
+} from './slack';
 
-export const rootReducer = combineReducers({
-  // config,
-  siteDiffReducer,
-  slackReducer
+export interface AppState {
+  siteDiff: ISiteDiffState,
+  slack: ISlackState
+}
+
+export const rootReducer = combineReducers<AppState>({
+  siteDiff,
+  slack
 });

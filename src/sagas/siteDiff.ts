@@ -1,7 +1,7 @@
 import * as fse from 'fs-extra';
 import * as AWS from 'aws-sdk';
 import { delay } from 'redux-saga';
-import { call, all, put, takeEvery } from 'redux-saga/effects';
+import { call, all, put, takeEvery, select } from 'redux-saga/effects';
 
 import {
   SITE_POLL_INTERVAL,
@@ -32,16 +32,18 @@ import {
   SiteDiffTypeKeys,
   slackMessageOutgoing,
   siteDiffIntervalStart,
-  siteDiffStart
+  siteDiffStart,
+  siteDiffFinish
 } from '../actions';
 import { store } from '../store';
+import { getWorking } from '../selectors';
 
 export function* bootstrapSiteDiff() {
   yield call(ensureFoldersCreated);
   yield call(initSiteDiff);
   yield put(siteDiffIntervalStart());
 
-  logger.info('bootstrapSiteDiff - done');
+  logger.debug('bootstrapSiteDiff - done');
 }
 
 export function* ensureFoldersCreated() {
@@ -58,19 +60,45 @@ export function* cloneAndUnminifySite() {
 }
 
 export function* initSiteDiff() {
-  const empty = yield call(isDirectoryEmpty, SITE_CACHE_DIR);
+  try {
+    const empty = yield call(isDirectoryEmpty, SITE_CACHE_DIR);
 
-  if (!empty) return;
+    if (!empty) return;
+  
+    logger.debug('initSiteDiff - Cache is empty. Creating cache')
+  
+    yield call(fse.remove, SITE_CLONE_DIR);
+    yield call(cloneAndUnminifySite);
+    yield call(setCloneAsCache);
+  
+    logger.debug('initSiteDiff - Cache created')
+  } catch (err) {
+    logger.error('initSiteDiff - critical error')
+    logger.error(err)
+  }
+}
 
-  yield call(fse.remove, SITE_CLONE_DIR);
-  yield call(cloneAndUnminifySite);
-  logger.info('initSiteDiff A');
-  yield call(setCloneAsCache);
-  logger.info('initSiteDiff B');
+export function* handleSiteDiffStart() {
+  try {
+
+    logger.info(`SITE_DIFF - Checking ${SITE_URL} for changes`)
+    logger.debug('handleSiteDiffStart - starting report');
+    const report = yield call(buildSiteDiffReport);
+  
+    logger.debug('handleSiteDiffStart - analyzing report');
+    yield call(analyzeSiteDiffReport, report);
+  
+    logger.debug('handleSiteDiffStart - firing SITE_DIFF_FINISH');
+    yield put(siteDiffFinish());
+
+  } catch (err) {
+    logger.error('handleSiteDiffStart - critical error')
+    logger.error(err)
+  }
 }
 
 export function* buildSiteDiffReport() {
-  logger.info('Build site diff report!');
+  logger.debug('buildSiteDiffReport - cloning site');
 
   yield call(cloneAndUnminifySite);
 
@@ -79,6 +107,8 @@ export function* buildSiteDiffReport() {
   const cacheFilesProcessed = yield call(processFileList, cacheFiles, SITE_URL);
 
   const cloneFilesProcessed = yield call(processFileList, cloneFiles, SITE_URL);
+
+  logger.debug('buildSiteDiffReport - generating report')
   const report = yield call(
     generateReport,
     cacheFilesProcessed,
@@ -86,22 +116,33 @@ export function* buildSiteDiffReport() {
     SITE_IGNORED_FILES
   );
 
-  yield call(analyzeSiteDiffReport, report);
+  logger.debug('buildSiteDiffReport - finished, returning report')
+  return report;  
 }
 
 export function* analyzeSiteDiffReport(report) {
-  logger.info('Analyze site diff report!');
+  logger.debug('analyzeSiteDiffReport - analyzing report');
 
   const hasChanged = yield call(hasReportChanged, report);
 
   if (hasChanged) {
+
+    logger.info('SITE_DIFF - Change detected')
+ 
     if (AWS_ENABLED) {
+      logger.info('SITE_DIFF - uploading HTML diff to S3 bucket')
       report.location = yield call(uploadSiteDiffToS3, report);
     }
 
     yield call(createSnapshot, SITE_CACHE_DIR, SITE_CLONE_DIR, SITE_SNAPSHOTS_DIR, report);
+    
+    logger.debug('analyzeSiteDiffReport - setting clone as cache')
     yield call(setCloneAsCache);
+
+    logger.info('SITE_DIFF - Sending alert to slack')
     yield call(communicateSiteChangedToSlack, report);
+  } else {
+    logger.info('SITE_DIFF - No change detected')
   }
 }
 
@@ -118,8 +159,6 @@ export function* uploadSiteDiffToS3(report) {
 }
 
 export function* communicateSiteChangedToSlack(report) {
-  logger.info('Communicate site changed to slack!');
-
   const slackMsg = yield call(genSlackReportMsg, report, SITE_URL);
 
   const msgActions = SLACK_CHANNELS_WHITELIST.map(channel =>
@@ -131,11 +170,18 @@ export function* communicateSiteChangedToSlack(report) {
 export function* handleSiteDiffIntervalStart() {
   while (true) {
     yield call(delay, SITE_POLL_INTERVAL);
-    yield put(siteDiffStart());
+    
+    const isWorking = yield select(getWorking);
+    if (isWorking) {
+      logger.debug('handleSiteDiffIntervalStart - Previous run still going, skipping site diff')
+    } else {
+      logger.debug('handleSiteDiffIntervalStart - No previous run, starting site diff')
+      yield put(siteDiffStart());
+    }
   }
 }
 
 export function* siteDiffSaga() {
   yield takeEvery(SiteDiffTypeKeys.SITE_DIFF_INTERVAL_START, handleSiteDiffIntervalStart);
-  yield takeEvery(SiteDiffTypeKeys.SITE_DIFF_START, buildSiteDiffReport);
+  yield takeEvery(SiteDiffTypeKeys.SITE_DIFF_START, handleSiteDiffStart);
 }

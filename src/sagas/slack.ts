@@ -19,6 +19,7 @@ import {
   replyDirect
 } from '../libs';
 import { getSlackClient } from '../slack';
+import { logger } from '../configs'
 
 function* handleMessageIncoming(action: ISlackMessageIncomingAction) {
   const msg: ISlackMessage = action.payload;
@@ -37,12 +38,16 @@ function* handleMessageIncoming(action: ISlackMessageIncomingAction) {
     return;
   }
 
+  logger.info('SLACK - Direct message detected');
+
   yield put(slackDirectCommand(msg, cmd, args));
 }
 
 function* handleMessageOutgoing(action: ISlackMessageOutgoingAction) {
   const { msg, channel } = action.payload;
   const client = yield call(getSlackClient);
+
+  logger.info(`SLACK - Sending message to channel ${channel}`);
 
   yield apply(client, client.sendMessage, [msg, channel]);
 }

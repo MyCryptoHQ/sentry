@@ -1,8 +1,8 @@
-interface IConfigState {}
+export interface ISlackState {}
 
-const INITIAL_STATE: IConfigState = {};
+const INITIAL_STATE: ISlackState = {};
 
-export const slackReducer = (state = INITIAL_STATE, action): IConfigState => {
+export const slackReducer = (state = INITIAL_STATE, action): ISlackState => {
   switch (action.type) {
     default:
       return state;

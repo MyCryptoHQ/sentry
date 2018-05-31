@@ -11,11 +11,11 @@ export const bindAndStartSlack = () => {
   if (!slackRTM.on) return;
 
   slackRTM.on(CLIENT_EVENTS.RTM.AUTHENTICATED, rtmStartData =>
-    logger.info('SLACK - AUTHENTICATED')
+    logger.info('SLACK - Authenticated successfully')
   );
 
   slackRTM.on(CLIENT_EVENTS.RTM.RTM_CONNECTION_OPENED, () => {
-    logger.info('SLACK - RTM CONNECTION OPENED');
+    logger.info('SLACK - RTM connection ready');
   });
 
   slackRTM.on(RTM_EVENTS.MESSAGE, (message: ISlackMessage) => {

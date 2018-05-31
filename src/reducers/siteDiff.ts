@@ -1,14 +1,28 @@
-export interface ISiteManifest {
-  file: string;
-  hash: string;
+import {
+  SiteDiffTypeKeys
+} from '../actions'
+
+
+export interface ISiteDiffState {
+  working: boolean
 }
 
-export interface ISiteDiffState {}
-
-export const INITIAL_STATE: ISiteDiffState = {};
+export const INITIAL_STATE: ISiteDiffState = {
+  working: false
+};
 
 export const siteDiffReducer = (state = INITIAL_STATE, action): ISiteDiffState => {
   switch (action.type) {
+    case SiteDiffTypeKeys.SITE_DIFF_START:
+      return {
+        ...state,
+        working: true
+      }
+    case SiteDiffTypeKeys.SITE_DIFF_FINISH:
+      return {
+        ...state,
+        working: false
+      }
     default:
       return state;
   }

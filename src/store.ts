@@ -9,7 +9,7 @@ const sagaMiddleware = createSagaMiddleware();
 
 export const store = createStore(
   rootReducer,
-  applyMiddleware(logger),
+  // applyMiddleware(logger),
   applyMiddleware(sagaMiddleware)
 );
 
