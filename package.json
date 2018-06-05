@@ -6,7 +6,8 @@
   "scripts": {
     "start": "ts-node src/index.ts",
     "test": "jest",
-    "precommit": "lint-staged"
+    "precommit": "lint-staged",
+    "build": "tsc"
   },
   "lint-staged": {
     "*.{js,ts,json,css,md}": ["prettier --write", "git add"]
