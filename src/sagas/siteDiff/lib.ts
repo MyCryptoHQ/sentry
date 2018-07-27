@@ -5,7 +5,6 @@ import * as fse from 'fs-extra';
 import { enumerateFilesInDir, unminifyJS, identifyJsFiles } from '../../libs';
 import { getConfig, ISiteDiffConfig } from '../../configs';
 
-
 export function* isDirectoryEmpty(dir: string): SagaIterator {
   const dirFiles = yield call(enumerateFilesInDir, dir);
   return dirFiles.length === 1;

@@ -6,8 +6,6 @@ import { siteDiffModeSaga } from './siteDiff';
 import { getConfig, TAppConfig } from '../configs';
 import { slackSaga } from './slack';
 
-
-
 export * from './parent';
 export * from './shared';
 export * from './siteDiff';
@@ -20,7 +18,7 @@ export function* rootSaga(): SagaIterator {
 
   switch (MODE) {
     case 'parent':
-      return yield fork(parentModeSaga)
+      return yield fork(parentModeSaga);
     case 'siteDiff':
       return yield fork(siteDiffModeSaga);
   }

@@ -2,7 +2,8 @@ import { ISlackMessage } from '../actions';
 
 export const messageIsNotEdit = (msg: ISlackMessage): any => !msg.hasOwnProperty('message');
 
-export const isPureDirectMention = (msg: ISlackMessage, slackBotRegex: RegExp): boolean => slackBotRegex.test(msg.text);
+export const isPureDirectMention = (msg: ISlackMessage, slackBotRegex: RegExp): boolean =>
+  slackBotRegex.test(msg.text);
 
 export const isChannelWhitelisted = (msg: ISlackMessage, channelWhitelist: string[]): boolean =>
   channelWhitelist.indexOf(msg.channel) !== -1;

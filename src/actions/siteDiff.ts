@@ -34,7 +34,7 @@ export function siteDiffIntervalStart(): ISiteDiffIntervalStartAction {
   };
 }
 
-export type TSiteDiffActions = 
-  ISiteDiffStartAction |
-  ISiteDiffFinishAction |
-  ISiteDiffIntervalStartAction;
+export type TSiteDiffActions =
+  | ISiteDiffStartAction
+  | ISiteDiffFinishAction
+  | ISiteDiffIntervalStartAction;

@@ -69,15 +69,17 @@ export const unminifyJSinDir = (directory: string): Promise<any> =>
 export const identifyJsFiles = (files: IKlawFileInfo[]) =>
   files.map(info => info.path).filter(filePath => /\.js$/.test(path.basename(filePath)));
 
-
 export interface ISiteDiffFileInfo {
   fullPath: string;
   comparePath: string;
   hash: string;
-  type: 'folder' | 'file'
+  type: 'folder' | 'file';
 }
 
-export const processFileList = (fileList: IKlawFileInfo[], siteUrl: string): Promise<ISiteDiffFileInfo[]> =>
+export const processFileList = (
+  fileList: IKlawFileInfo[],
+  siteUrl: string
+): Promise<ISiteDiffFileInfo[]> =>
   new Promise(async (resolve, reject) => {
     const hashedList: ISiteDiffFileInfo[] = [];
 
@@ -141,14 +143,14 @@ export const generateReport = async (
 };
 
 export interface ISiteDiffReport {
-  cachedManifest: ISiteDiffFileInfo[],
-  clonedManifest: ISiteDiffFileInfo[],
-  newFiles: ISiteDiffFileInfo[],
-  deletedFiles: ISiteDiffFileInfo[],
-  changedFiles: ISiteDiffFileInfo[]
-  ignoredFiles: ISiteDiffFileInfo[],
-  htmlDiffs: string[],
-  location?: string
+  cachedManifest: ISiteDiffFileInfo[];
+  clonedManifest: ISiteDiffFileInfo[];
+  newFiles: ISiteDiffFileInfo[];
+  deletedFiles: ISiteDiffFileInfo[];
+  changedFiles: ISiteDiffFileInfo[];
+  ignoredFiles: ISiteDiffFileInfo[];
+  htmlDiffs: string[];
+  location?: string;
 }
 
 export const getHTMLDiffFromTwoFiles = (file1Path: string, file2Path: string): Promise<string> =>
@@ -175,7 +177,10 @@ export const unminifyJS = (file: string): Promise<void> =>
     });
   });
 
-export const detectNewFiles = (oldFileList: ISiteDiffFileInfo[], newFileList: ISiteDiffFileInfo[]): ISiteDiffFileInfo[] =>
+export const detectNewFiles = (
+  oldFileList: ISiteDiffFileInfo[],
+  newFileList: ISiteDiffFileInfo[]
+): ISiteDiffFileInfo[] =>
   newFileList.filter(
     (newItem: ISiteDiffFileInfo) =>
       !oldFileList.reduce((found, oldItem) => {
@@ -186,9 +191,12 @@ export const detectNewFiles = (oldFileList: ISiteDiffFileInfo[], newFileList: IS
       }, false)
   );
 
-export const detectDeletedFiles = (oldFileList: ISiteDiffFileInfo[], newFileList: ISiteDiffFileInfo[]): ISiteDiffFileInfo[] =>
+export const detectDeletedFiles = (
+  oldFileList: ISiteDiffFileInfo[],
+  newFileList: ISiteDiffFileInfo[]
+): ISiteDiffFileInfo[] =>
   oldFileList.filter(
-    (oldItem) =>
+    oldItem =>
       !newFileList.reduce((found, newItem) => {
         if (found) {
           return found;
@@ -197,8 +205,11 @@ export const detectDeletedFiles = (oldFileList: ISiteDiffFileInfo[], newFileList
       }, false)
   );
 
-export const detectChangedFiles = (oldFileList: ISiteDiffFileInfo[], newFileList: ISiteDiffFileInfo[]): ISiteDiffFileInfo[] =>
-  newFileList.filter((newItem) =>
+export const detectChangedFiles = (
+  oldFileList: ISiteDiffFileInfo[],
+  newFileList: ISiteDiffFileInfo[]
+): ISiteDiffFileInfo[] =>
+  newFileList.filter(newItem =>
     oldFileList.reduce((found, oldItem) => {
       if (found) {
         return found;

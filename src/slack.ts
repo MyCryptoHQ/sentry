@@ -8,7 +8,7 @@ import { store } from './store';
 export const slackRTM: any = (() => {
   const { SLACK_API_TOKEN } = <IParentConfig>getConfig();
   return new RtmClient(SLACK_API_TOKEN);
-})()
+})();
 
 export const bindAndStartSlack = () => {
   if (!slackRTM.on) return;

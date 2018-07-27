@@ -1,5 +1,3 @@
+import { IAppState } from '../reducers';
 
-import { IAppState } from '../reducers'
-
-export const getSlackChannelsWhitelist = (state: IAppState) =>
-  state.slack.channelsWhitelist;
+export const getSlackChannelsWhitelist = (state: IAppState) => state.slack.channelsWhitelist;

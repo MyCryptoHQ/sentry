@@ -30,11 +30,15 @@ export interface IWorkerCloseAction {
   config: TWorkerConfig;
 }
 
-export function workerClose(code: number, signal: string, config: TWorkerConfig): IWorkerCloseAction {
+export function workerClose(
+  code: number,
+  signal: string,
+  config: TWorkerConfig
+): IWorkerCloseAction {
   return {
     type: WorkerTypeKeys.WORKER_CLOSE,
     workerName: config.WORKER_NAME,
-    code, 
+    code,
     signal,
     config
   };
@@ -52,7 +56,4 @@ export function workerMessage(msg: any): IWorkerMessageAction {
   };
 }
 
-export type TWorkerActions =
-  IWorkerStartAction |
-  IWorkerCloseAction |
-  IWorkerMessageAction;
+export type TWorkerActions = IWorkerStartAction | IWorkerCloseAction | IWorkerMessageAction;

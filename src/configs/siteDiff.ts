@@ -3,7 +3,7 @@ import * as path from 'path';
 
 import { TLogLevel } from './logger';
 import { getSiteBaseName } from '../libs';
-import { APP_NAME } from './app'; 
+import { APP_NAME } from './app';
 
 export interface ISiteDiffConfigurable {
   MODE: 'siteDiff';
@@ -35,7 +35,7 @@ export const makeSiteDiffConfig = (config: ISiteDiffConfigurable): ISiteDiffConf
     ? path.resolve(config.WORKING_DIR)
     : path.resolve(homedir(), `.${APP_NAME}`, 'siteDiff', SITE_BASE_NAME);
   const LOG_FILE_NAME = 'parent.log';
-  
+
   return {
     // set defaults
     AWS_ENABLED: false,
@@ -55,6 +55,6 @@ export const makeSiteDiffConfig = (config: ISiteDiffConfigurable): ISiteDiffConf
     SITE_BASE_NAME,
     SITE_CLONE_DIR: path.resolve(WORKING_DIR, `${SITE_BASE_NAME}.clone`),
     SITE_CACHE_DIR: path.resolve(WORKING_DIR, `${SITE_BASE_NAME}.cache`),
-    SITE_SNAPSHOTS_DIR: path.resolve(WORKING_DIR, 'snapshots'),
-  }
-}
+    SITE_SNAPSHOTS_DIR: path.resolve(WORKING_DIR, 'snapshots')
+  };
+};

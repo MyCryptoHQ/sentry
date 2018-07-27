@@ -13,20 +13,15 @@ import {
   slackMessageOutgoing,
   slackChannelsWhitelistSet
 } from '../actions';
-import {
-  messageIsNotEdit,
-  isChannelWhitelisted,
-  isPureDirectMention
-} from '../libs';
+import { messageIsNotEdit, isChannelWhitelisted, isPureDirectMention } from '../libs';
 import { getSlackClient, bindAndStartSlack } from '../slack';
 import { logger, getConfig, TAppConfig, IParentConfig } from '../configs';
 import { getWorkerNames, TWorkerNames, getSlackChannelsWhitelist } from '../selectors';
 
-
 export function* isWorkerCommand({ text }: ISlackMessage): SagaIterator {
   const firstArg = text.split(' ')[0];
-  const workerNames: TWorkerNames[] = yield select(getWorkerNames)
-  
+  const workerNames: TWorkerNames[] = yield select(getWorkerNames);
+
   return workerNames.indexOf(firstArg) !== -1;
 }
 
@@ -45,9 +40,9 @@ function* handleSlackMessageIncoming({ msg }: ISlackMessageIncomingAction) {
   logger.info('SLACK - Direct message detected');
 
   if (yield call(isWorkerCommand, msg)) {
-    yield put(slackWorkerCommand(msg))
+    yield put(slackWorkerCommand(msg));
   } else {
-    yield put(slackParentCommand(msg))
+    yield put(slackParentCommand(msg));
   }
 }
 
@@ -59,18 +54,16 @@ function* handleSlackMessageOutgoing({ msg, channel }: ISlackMessageOutgoingActi
     logger.info(`SLACK - Sending message to channel ${channel}`);
     yield apply(client, client.sendMessage, [msg, channel]);
   } else {
-    yield call(process.send, slackMessageOutgoing(msg, channel))
+    yield call(process.send, slackMessageOutgoing(msg, channel));
   }
 }
-
-
 
 export function* slackSaga(): SagaIterator {
   const { MODE, ...config }: TAppConfig = yield call(getConfig);
 
   if (MODE === 'parent') {
     yield call(bindAndStartSlack);
-    yield put(slackChannelsWhitelistSet((config as IParentConfig).SLACK_CHANNELS_WHITELIST))
+    yield put(slackChannelsWhitelistSet((config as IParentConfig).SLACK_CHANNELS_WHITELIST));
   }
 
   yield takeEvery(SlackTypeKeys.SLACK_MESSAGE_INCOMING, handleSlackMessageIncoming);

@@ -44,5 +44,5 @@ export const makeParentConfig = (config: IParentConfigurable): IParentConfig => 
     ...config,
     WORKER_NAME: 'parent',
     SLACK_BOT_REGEX: new RegExp(`^<@${config.SLACK_BOT_ID}>`)
-  }
-}
+  };
+};

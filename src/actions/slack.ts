@@ -21,10 +21,6 @@ export interface ISlackMessage {
  * action type interfaces
  */
 
-
-
-
-
 /**
  * action creators
  */
@@ -33,7 +29,6 @@ export interface ISlackMessageIncomingAction {
   type: SlackTypeKeys.SLACK_MESSAGE_INCOMING;
   msg: ISlackMessage;
 }
-
 
 export function slackMessageIncoming(msg: ISlackMessage): ISlackMessageIncomingAction {
   return {
@@ -51,7 +46,7 @@ export interface ISlackMessageOutgoingAction {
 export function slackMessageOutgoing(msg: string, channel: string): ISlackMessageOutgoingAction {
   return {
     type: SlackTypeKeys.SLACK_MESSAGE_OUTGOING,
-    msg, 
+    msg,
     channel
   };
 }
@@ -65,7 +60,7 @@ export function slackParentCommand(msg: ISlackMessage): ISlackParentCommandActio
   return {
     type: SlackTypeKeys.SLACK_PARENT_COMMAND,
     msg
-  }
+  };
 }
 
 export interface ISlackWorkerCommandAction {
@@ -77,24 +72,24 @@ export function slackWorkerCommand(msg: ISlackMessage): ISlackWorkerCommandActio
   return {
     type: SlackTypeKeys.SLACK_WORKER_COMMAND,
     msg
-  }
+  };
 }
 
 export interface ISlackChannelsWhitelistSet {
-  type: SlackTypeKeys.SLACK_CHANNELS_WHITELIST_SET,
-  channelsWhitelist: string[]
+  type: SlackTypeKeys.SLACK_CHANNELS_WHITELIST_SET;
+  channelsWhitelist: string[];
 }
 
 export function slackChannelsWhitelistSet(channelsWhitelist: string[]): ISlackChannelsWhitelistSet {
   return {
     type: SlackTypeKeys.SLACK_CHANNELS_WHITELIST_SET,
     channelsWhitelist
-  }
+  };
 }
 
-export type TSlackActions = 
-  ISlackMessageIncomingAction |
-  ISlackMessageOutgoingAction | 
-  ISlackParentCommandAction | 
-  ISlackWorkerCommandAction | 
-  ISlackChannelsWhitelistSet
+export type TSlackActions =
+  | ISlackMessageIncomingAction
+  | ISlackMessageOutgoingAction
+  | ISlackParentCommandAction
+  | ISlackWorkerCommandAction
+  | ISlackChannelsWhitelistSet;

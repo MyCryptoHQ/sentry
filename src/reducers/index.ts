@@ -7,7 +7,7 @@ import { workerReducer as worker, IWorkerState } from './worker';
 export interface IAppState {
   siteDiff: ISiteDiffState;
   slack: ISlackState;
-  worker: IWorkerState
+  worker: IWorkerState;
 }
 
 export const rootReducer = combineReducers<IAppState>({

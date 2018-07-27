@@ -3,11 +3,7 @@ import * as AWS from 'aws-sdk';
 import { delay } from 'redux-saga';
 import { call, all, put, takeEvery, select } from 'redux-saga/effects';
 
-import {
-  ISiteDiffConfig,
-  getConfig,
-  logger
-} from '../../configs';
+import { ISiteDiffConfig, getConfig, logger } from '../../configs';
 import { isDirectoryEmpty, unminifyJSinDir, setCloneAsCache } from './lib';
 import {
   cloneWebsite,
@@ -40,7 +36,9 @@ export function* bootstrapSiteDiff() {
 }
 
 export function* ensureFoldersCreated() {
-  const { SITE_CACHE_DIR, SITE_CLONE_DIR, SITE_SNAPSHOTS_DIR }: ISiteDiffConfig = yield call(getConfig);
+  const { SITE_CACHE_DIR, SITE_CLONE_DIR, SITE_SNAPSHOTS_DIR }: ISiteDiffConfig = yield call(
+    getConfig
+  );
 
   yield call(fse.ensureDir, SITE_CACHE_DIR);
   yield call(fse.ensureDir, SITE_CLONE_DIR);
@@ -97,7 +95,12 @@ export function* handleSiteDiffStart() {
 }
 
 export function* buildSiteDiffReport() {
-  const { SITE_CACHE_DIR, SITE_CLONE_DIR, SITE_URL, SITE_IGNORED_FILES }: ISiteDiffConfig = yield call(getConfig);
+  const {
+    SITE_CACHE_DIR,
+    SITE_CLONE_DIR,
+    SITE_URL,
+    SITE_IGNORED_FILES
+  }: ISiteDiffConfig = yield call(getConfig);
 
   logger.debug('buildSiteDiffReport - cloning site');
 
@@ -122,7 +125,12 @@ export function* buildSiteDiffReport() {
 }
 
 export function* analyzeSiteDiffReport(report: ISiteDiffReport) {
-  const { AWS_ENABLED, SITE_CACHE_DIR, SITE_CLONE_DIR, SITE_SNAPSHOTS_DIR }: ISiteDiffConfig = yield call(getConfig);
+  const {
+    AWS_ENABLED,
+    SITE_CACHE_DIR,
+    SITE_CLONE_DIR,
+    SITE_SNAPSHOTS_DIR
+  }: ISiteDiffConfig = yield call(getConfig);
 
   logger.debug('analyzeSiteDiffReport - analyzing report');
 
@@ -188,10 +196,9 @@ export function* handleSiteDiffIntervalStart() {
         logger.debug('handleSiteDiffIntervalStart - No previous run, starting site diff');
         yield put(siteDiffStart());
       }
-
-    } catch(err) {
+    } catch (err) {
       yield put(siteDiffFinish());
-      logger.error(err)
+      logger.error(err);
     }
   }
 }

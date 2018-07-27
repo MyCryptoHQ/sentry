@@ -8,7 +8,10 @@ export const INITIAL_STATE: ISiteDiffState = {
   working: false
 };
 
-export const siteDiffReducer = (state = INITIAL_STATE, action: TSiteDiffActions): ISiteDiffState => {
+export const siteDiffReducer = (
+  state = INITIAL_STATE,
+  action: TSiteDiffActions
+): ISiteDiffState => {
   switch (action.type) {
     case SiteDiffTypeKeys.SITE_DIFF_START:
       return {
