@@ -1,6 +1,4 @@
 import { createHash } from 'crypto';
-import { spawn } from 'child_process';
-import * as path from 'path';
 
 import * as klaw from 'klaw';
 import * as jsBeautify from 'js-beautify';
@@ -9,19 +7,17 @@ import * as AWS from 'aws-sdk';
 
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 
-export interface KlawFileInfo {
+export interface IKlawFileInfo {
   path: string;
-  stats: {
-    Stats: object;
-  };
+  stats: any;
 }
 
-export const enumerateFilesInDir = (dirPath: string): Promise<KlawFileInfo[]> =>
+export const enumerateFilesInDir = (dirPath: string): Promise<IKlawFileInfo[]> =>
   new Promise((resolve, reject) => {
-    const contents: KlawFileInfo[] = [];
+    const contents: IKlawFileInfo[] = [];
 
     klaw(dirPath)
-      .on('data', (item: KlawFileInfo) => contents.push(item))
+      .on('data', (item: IKlawFileInfo) => contents.push(item))
       .on('end', () => resolve(contents))
       .on('error', err => reject(err));
   });

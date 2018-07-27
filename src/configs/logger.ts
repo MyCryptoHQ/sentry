@@ -1,21 +1,28 @@
-import * as path from 'path';
-import * as winston from 'winston';
+import { transports, Logger, format, createLogger } from 'winston';
+const { combine, timestamp, printf } = format;
+const { hex } = require('chalk');
 
-import { WORKING_DIR, LOG_LEVEL_CONSOLE, LOG_LEVEL_FILE } from './constants';
+import { getConfig } from './app';
 
-export const LOG_FILE_NAME = 'log.txt';
-export const LOG_FILE_PATH = path.resolve(WORKING_DIR, LOG_FILE_NAME);
-export const logger = new winston.Logger();
+export type TLogLevel = 'error' | 'warn' | 'info' | 'verbose' | 'debug' | 'silly';
 
-logger.add(winston.transports.Console, {
-  level: LOG_LEVEL_CONSOLE,
-  prettyPrint: true,
-  colorize: true,
-  silent: false,
-  timestamp: false
-});
+const { 
+  LOG_LEVEL_CONSOLE, 
+  LOG_LEVEL_FILE, 
+  LOG_FILE_PATH,
+  LOG_HEX_COLOR,
+  WORKER_NAME
+} = getConfig();
 
-logger.add(winston.transports.File, {
+const winstonConsoleOptions = {
+    level: LOG_LEVEL_CONSOLE,
+    prettyPrint: true,
+    colorize: true,
+    silent: false,
+    timestamp: false
+};
+
+const winstonFileOptions = {
   prettyPrint: false,
   level: LOG_LEVEL_FILE,
   silent: false,
@@ -25,4 +32,19 @@ logger.add(winston.transports.File, {
   maxsize: 40000,
   maxFiles: 10,
   json: false
+}
+
+const myFormat = printf(({ timestamp, level, message }) => 
+  `${timestamp} ${hex(LOG_HEX_COLOR)(`[${WORKER_NAME}]`)} ${level}: ${message}`
+);
+
+export const logger = createLogger({
+  format: combine(
+    timestamp(),
+    myFormat
+  ),
+  transports: [
+    new transports.Console(winstonConsoleOptions),
+    new transports.File(winstonFileOptions)
+  ]
 });

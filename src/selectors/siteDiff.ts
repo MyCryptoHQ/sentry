@@ -1,3 +1,3 @@
-import { AppState } from '../reducers';
+import { IAppState } from '../reducers';
 
-export const getWorking = (state: AppState) => state.siteDiff.working;
+export const getWorking = (state: IAppState) => state.siteDiff.working;

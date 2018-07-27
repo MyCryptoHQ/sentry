@@ -2,8 +2,8 @@ import { SagaIterator } from 'redux-saga';
 import { all, call, fork } from 'redux-saga/effects';
 import * as fse from 'fs-extra';
 
-import { enumerateFilesInDir, unminifyJS, identifyJsFiles } from '../libs';
-import { SITE_CACHE_DIR, SITE_CLONE_DIR } from '../configs';
+import { enumerateFilesInDir, unminifyJS, identifyJsFiles } from '../../libs';
+import { getConfig, ISiteDiffConfig } from '../../configs';
 
 export function* isDirectoryEmpty(dir: string): SagaIterator {
   const dirFiles = yield call(enumerateFilesInDir, dir);
@@ -18,6 +18,8 @@ export function* unminifyJSinDir(dir: string): SagaIterator {
 }
 
 export function* setCloneAsCache() {
+  const { SITE_CACHE_DIR, SITE_CLONE_DIR }: ISiteDiffConfig = yield call(getConfig);
+
   // delete cache dir
   yield call(fse.remove, SITE_CACHE_DIR);
 
