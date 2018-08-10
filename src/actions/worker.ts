@@ -3,7 +3,8 @@ import { TWorkerConfig } from '../configs';
 export enum WorkerTypeKeys {
   WORKER_START = 'WORKER_START',
   WORKER_CLOSE = 'WORKER_CLOSE',
-  WORKER_MESSAGE = 'WORKER_MESSAGE'
+  WORKER_MESSAGE = 'WORKER_MESSAGE',
+  WORKER_ONLINE = 'WORKER_ONLINE'
 }
 
 export interface IWorkerStartAction {
@@ -16,6 +17,22 @@ export interface IWorkerStartAction {
 export function workerStart(clusterId: number, config: TWorkerConfig): IWorkerStartAction {
   return {
     type: WorkerTypeKeys.WORKER_START,
+    workerName: config.WORKER_NAME,
+    clusterId,
+    config
+  };
+}
+
+export interface IWorkerOnlineAction {
+  type: WorkerTypeKeys.WORKER_ONLINE;
+  workerName: string;
+  clusterId: number;
+  config: TWorkerConfig;
+}
+
+export function workerOnline(clusterId: number, config: TWorkerConfig): IWorkerOnlineAction {
+  return {
+    type: WorkerTypeKeys.WORKER_ONLINE,
     workerName: config.WORKER_NAME,
     clusterId,
     config

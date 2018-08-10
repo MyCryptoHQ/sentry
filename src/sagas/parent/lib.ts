@@ -8,7 +8,7 @@ import { SagaIterator } from 'redux-saga';
 
 export function* getChildConfigPaths(): SagaIterator {
   const { CHILD_CONFIG_FOLDER } = yield call(getConfig);
-  return (yield call(fse.readdir, CHILD_CONFIG_FOLDER)).filter(
-    (p: string) => path.basename(p) !== 'parent.json'
-  );
+  return (yield call(fse.readdir, CHILD_CONFIG_FOLDER))
+    .filter((p: string) => p !== 'parent.json')
+    .map((p: string) => path.resolve(CHILD_CONFIG_FOLDER, p));
 }

@@ -13,10 +13,12 @@ import {
   slackMessageOutgoing,
   slackChannelsWhitelistSet
 } from '../actions';
-import { messageIsNotEdit, isChannelWhitelisted, isPureDirectMention } from '../libs';
+import { messageIsNotEdit, isChannelWhitelisted, isPureDirectMention, getProcess } from '../libs';
 import { getSlackClient, bindAndStartSlack } from '../slack';
-import { logger, getConfig, TAppConfig, IParentConfig } from '../configs';
+import { makeLocalLogger, getConfig, TAppConfig, IParentConfig } from '../configs';
 import { getWorkerNames, TWorkerNames, getSlackChannelsWhitelist } from '../selectors';
+
+const _log = makeLocalLogger('slack');
 
 export function* isWorkerCommand({ text }: ISlackMessage): SagaIterator {
   const firstArg = text.split(' ')[0];
@@ -37,7 +39,7 @@ function* handleSlackMessageIncoming({ msg }: ISlackMessageIncomingAction) {
     return;
   }
 
-  logger.info('SLACK - Direct message detected');
+  _log.info('Direct message detected');
 
   if (yield call(isWorkerCommand, msg)) {
     yield put(slackWorkerCommand(msg));
@@ -48,13 +50,14 @@ function* handleSlackMessageIncoming({ msg }: ISlackMessageIncomingAction) {
 
 function* handleSlackMessageOutgoing({ msg, channel }: ISlackMessageOutgoingAction) {
   const { MODE }: TAppConfig = yield call(getConfig);
+  const _process = yield call(getProcess);
 
   if (MODE === 'parent') {
     const client = yield call(getSlackClient);
-    logger.info(`SLACK - Sending message to channel ${channel}`);
+    _log.info(`Sending message to channel ${channel}`);
     yield apply(client, client.sendMessage, [msg, channel]);
   } else {
-    yield call(process.send, slackMessageOutgoing(msg, channel));
+    yield apply(_process, _process.send, [slackMessageOutgoing(msg, channel)]);
   }
 }
 

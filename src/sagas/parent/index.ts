@@ -10,6 +10,7 @@ import { store } from '../../store';
 import {
   workerStart,
   workerClose,
+  workerOnline,
   IWorkerStartAction,
   WorkerTypeKeys,
   slackChannelsWhitelistSet
@@ -38,6 +39,10 @@ function* startWorker(configPath: string): SagaIterator {
     store.dispatch(action);
   });
 
+  worker.on('online', () => {
+    store.dispatch(workerOnline(worker.id, config));
+  });
+
   yield put(workerStart(worker.id, config));
 }
 
@@ -49,6 +54,5 @@ function* initWorker({ clusterId }: IWorkerStartAction): SagaIterator {
 
 export function* parentModeSaga() {
   yield fork(startAllWorkers);
-
-  yield takeEvery(WorkerTypeKeys.WORKER_START, initWorker);
+  yield takeEvery(WorkerTypeKeys.WORKER_ONLINE, initWorker);
 }

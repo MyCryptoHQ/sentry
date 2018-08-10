@@ -2,7 +2,7 @@ import { SagaIterator } from 'redux-saga';
 import { call, fork } from 'redux-saga/effects';
 import { bootstrapApp } from './shared';
 import { parentModeSaga } from './parent';
-import { siteDiffModeSaga } from './siteDiff';
+import { siteDiffModeSaga } from './siteDiff/mode';
 import { getConfig, TAppConfig } from '../configs';
 import { slackSaga } from './slack';
 

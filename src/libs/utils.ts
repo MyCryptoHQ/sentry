@@ -49,3 +49,5 @@ export const hashFileSha256 = (filePath: string): Promise<string> =>
 
 export const uploadToS3 = async (params: AWS.S3.Types.PutObjectRequest) =>
   s3.upload(params).promise();
+
+export const getProcess = () => process;

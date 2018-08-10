@@ -7,6 +7,7 @@ import { APP_NAME } from './app';
 
 export interface ISiteDiffConfigurable {
   MODE: 'siteDiff';
+  TRACE_ACTIONS?: boolean;
   WORKER_NAME: string;
   SITE_URL: string;
   SITE_POLL_INTERVAL: number;
@@ -38,6 +39,7 @@ export const makeSiteDiffConfig = (config: ISiteDiffConfigurable): ISiteDiffConf
 
   return {
     // set defaults
+    TRACE_ACTIONS: false,
     AWS_ENABLED: false,
     AWS_BUCKET: '',
     LOG_LEVEL_CONSOLE: 'info',
