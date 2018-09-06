@@ -1,16 +1,16 @@
 import { ISlackMessage } from '../actions';
-import { SLACK_BOT_REGEX, SLACK_CHANNELS_WHITELIST } from '../configs';
 
 export const messageIsNotEdit = (msg: ISlackMessage): any => !msg.hasOwnProperty('message');
 
-export const isPureDirectMention = (msg: ISlackMessage): boolean => SLACK_BOT_REGEX.test(msg.text);
+export const isPureDirectMention = (msg: ISlackMessage, slackBotRegex: RegExp): boolean =>
+  slackBotRegex.test(msg.text);
 
-export const isChannelWhitelisted = (msg: ISlackMessage): boolean =>
-  SLACK_CHANNELS_WHITELIST.indexOf(msg.channel) !== -1;
+export const isChannelWhitelisted = (msg: ISlackMessage, channelWhitelist: string[]): boolean =>
+  channelWhitelist.indexOf(msg.channel) !== -1;
 
-export const parseMessage = (msg: ISlackMessage): string =>
+export const parseMessage = (msg: ISlackMessage, slackBotRegex: RegExp): string =>
   msg.text
-    .replace(SLACK_BOT_REGEX, '')
+    .replace(slackBotRegex, '')
     .toLocaleLowerCase()
     .trim();
 

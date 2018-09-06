@@ -1,24 +1,34 @@
-import { CLIENT_EVENTS, RTM_EVENTS, RtmClient } from '@slack/client';
+const { RTMClient } = require('@slack/client');
 
-import { SLACK_API_TOKEN, logger } from './configs';
+import { getConfig, IParentConfig, makeLocalLogger } from './configs';
 import { slackMessageIncoming, ISlackMessage } from './actions';
 import { store } from './store';
 
+const _log = makeLocalLogger('slack');
+
 // slack real-time messaging
-export const slackRTM: any = new RtmClient(SLACK_API_TOKEN);
+export const slackRTM: any = (() => {
+  const { SLACK_API_TOKEN } = <IParentConfig>getConfig();
+  return new RTMClient(SLACK_API_TOKEN);
+})();
 
 export const bindAndStartSlack = () => {
-  if (!slackRTM.on) return;
+  if (!slackRTM.on) {
+    _log.info('NOT binding slack');
+    return;
+  }
 
-  slackRTM.on(CLIENT_EVENTS.RTM.AUTHENTICATED, rtmStartData =>
-    logger.info('SLACK - Authenticated successfully')
-  );
+  slackRTM.on('authenticated', () => _log.info('RTM authenticated'));
 
-  slackRTM.on(CLIENT_EVENTS.RTM.RTM_CONNECTION_OPENED, () => {
-    logger.info('SLACK - RTM connection ready');
+  slackRTM.on('connected', () => {
+    _log.info('RTM connected');
   });
 
-  slackRTM.on(RTM_EVENTS.MESSAGE, (message: ISlackMessage) => {
+  slackRTM.on('disconnected', () => {
+    _log.info('RTM disconnected');
+  });
+
+  slackRTM.on('message', (message: ISlackMessage) => {
     store.dispatch(slackMessageIncoming(message));
   });
 

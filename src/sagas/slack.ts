@@ -1,70 +1,74 @@
+import * as cluster from 'cluster';
+
 import { SagaIterator } from 'redux-saga';
-import { takeEvery, call, put, apply } from 'redux-saga/effects';
+import { takeEvery, call, put, apply, select } from 'redux-saga/effects';
 
 import {
   SlackTypeKeys,
   ISlackMessageIncomingAction,
   ISlackMessageOutgoingAction,
-  ISlackDirectCommandAction,
   ISlackMessage,
-  slackDirectCommand,
-  slackMessageOutgoing
+  slackParentCommand,
+  slackWorkerCommand,
+  slackMessageOutgoing,
+  slackChannelsWhitelistSet
 } from '../actions';
-import {
-  messageIsNotEdit,
-  isChannelWhitelisted,
-  isPureDirectMention,
-  parseMessage,
-  parseCmdAndArgs,
-  replyDirect
-} from '../libs';
-import { getSlackClient } from '../slack';
-import { logger } from '../configs';
+import { messageIsNotEdit, isChannelWhitelisted, isPureDirectMention, getProcess } from '../libs';
+import { getSlackClient, bindAndStartSlack } from '../slack';
+import { makeLocalLogger, getConfig, TAppConfig, IParentConfig } from '../configs';
+import { getWorkerNames, TWorkerNames, getSlackChannelsWhitelist } from '../selectors';
 
-function* handleMessageIncoming(action: ISlackMessageIncomingAction) {
-  const msg: ISlackMessage = action.payload;
-  const isWhitelisted = yield call(isChannelWhitelisted, msg);
-  const isMention = yield call(isPureDirectMention, msg);
+const _log = makeLocalLogger('slack');
+
+export function* isWorkerCommand({ text }: ISlackMessage): SagaIterator {
+  const firstArg = text.split(' ')[0];
+  const workerNames: TWorkerNames[] = yield select(getWorkerNames);
+
+  return workerNames.indexOf(firstArg) !== -1;
+}
+
+function* handleSlackMessageIncoming({ msg }: ISlackMessageIncomingAction) {
+  const { SLACK_BOT_REGEX }: IParentConfig = yield call(getConfig);
+  const channelsWhitelist = yield select(getSlackChannelsWhitelist);
+
+  const isWhitelisted = yield call(isChannelWhitelisted, msg, channelsWhitelist);
+  const isMention = yield call(isPureDirectMention, msg, SLACK_BOT_REGEX);
   const isNotEdit = yield call(messageIsNotEdit, msg);
 
   if (!isWhitelisted || !isMention || !isNotEdit) {
     return;
   }
 
-  const parsedMessage = yield call(parseMessage, msg);
-  const { cmd, args } = yield call(parseCmdAndArgs, parsedMessage);
+  _log.info('Direct message detected');
 
-  if (!cmd) {
-    return;
+  if (yield call(isWorkerCommand, msg)) {
+    yield put(slackWorkerCommand(msg));
+  } else {
+    yield put(slackParentCommand(msg));
   }
-
-  logger.info('SLACK - Direct message detected');
-
-  yield put(slackDirectCommand(msg, cmd, args));
 }
 
-function* handleMessageOutgoing(action: ISlackMessageOutgoingAction) {
-  const { msg, channel } = action.payload;
-  const client = yield call(getSlackClient);
+function* handleSlackMessageOutgoing({ msg, channel }: ISlackMessageOutgoingAction) {
+  const { MODE }: TAppConfig = yield call(getConfig);
+  const _process = yield call(getProcess);
 
-  logger.info(`SLACK - Sending message to channel ${channel}`);
-
-  yield apply(client, client.sendMessage, [msg, channel]);
-}
-
-function* handleDirectCommand(action: ISlackDirectCommandAction) {
-  const { msg, cmd, args } = action.payload;
-  const { channel } = msg;
-
-  switch (cmd) {
-    case 'ping':
-      const reply = replyDirect(msg, 'pong');
-      return yield put(slackMessageOutgoing(reply, channel));
+  if (MODE === 'parent') {
+    const client = yield call(getSlackClient);
+    _log.info(`Sending message to channel ${channel}`);
+    yield apply(client, client.sendMessage, [msg, channel]);
+  } else {
+    yield apply(_process, _process.send, [slackMessageOutgoing(msg, channel)]);
   }
 }
 
 export function* slackSaga(): SagaIterator {
-  yield takeEvery(SlackTypeKeys.SLACK_MESSAGE_INCOMING, handleMessageIncoming);
-  yield takeEvery(SlackTypeKeys.SLACK_MESSAGE_OUTGOING, handleMessageOutgoing);
-  yield takeEvery(SlackTypeKeys.SLACK_DIRECT_COMMAND, handleDirectCommand);
+  const { MODE, ...config }: TAppConfig = yield call(getConfig);
+
+  if (MODE === 'parent') {
+    yield call(bindAndStartSlack);
+    yield put(slackChannelsWhitelistSet((config as IParentConfig).SLACK_CHANNELS_WHITELIST));
+  }
+
+  yield takeEvery(SlackTypeKeys.SLACK_MESSAGE_INCOMING, handleSlackMessageIncoming);
+  yield takeEvery(SlackTypeKeys.SLACK_MESSAGE_OUTGOING, handleSlackMessageOutgoing);
 }

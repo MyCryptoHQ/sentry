@@ -33,3 +33,8 @@ export function siteDiffIntervalStart(): ISiteDiffIntervalStartAction {
     type: SiteDiffTypeKeys.SITE_DIFF_INTERVAL_START
   };
 }
+
+export type TSiteDiffActions =
+  | ISiteDiffStartAction
+  | ISiteDiffFinishAction
+  | ISiteDiffIntervalStartAction;
