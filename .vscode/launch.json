@@ -10,10 +10,10 @@
       "name": "Launch Program",
       "runtimeExecutable": "node",
       "preLaunchTask": "tsc: build - tsconfig.json",
-      "args": [
-        "dist/index.js",
-        "config.json"
-      ]
+      "args": ["dist/index.js"],
+      "env": {
+        "SENTRY_CONFIG_PATH": "./testConfigs/parent.json"
+      }
     }
   ]
 }

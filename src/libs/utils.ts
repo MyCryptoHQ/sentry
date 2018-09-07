@@ -1,9 +1,12 @@
 import { createHash } from 'crypto';
 
+import { call } from 'redux-saga/effects';
+import { SagaIterator } from 'redux-saga';
 import * as klaw from 'klaw';
 import * as jsBeautify from 'js-beautify';
 import * as fse from 'fs-extra';
 import * as AWS from 'aws-sdk';
+import { runChildProcess } from './siteDiff';
 
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 
@@ -21,6 +24,14 @@ export const enumerateFilesInDir = (dirPath: string): Promise<IKlawFileInfo[]> =
       .on('end', () => resolve(contents))
       .on('error', err => reject(err));
   });
+
+export const isDirectoryEmpty = async (dir: string): Promise<boolean> =>
+  (await enumerateFilesInDir(dir)).length === 1;
+
+export const hashSha256 = (data: string | Buffer) =>
+  createHash('sha256')
+    .update(data)
+    .digest('hex');
 
 export const hashFileSha256 = (filePath: string): Promise<string> =>
   new Promise(async (resolve, reject) => {
@@ -51,3 +62,6 @@ export const uploadToS3 = async (params: AWS.S3.Types.PutObjectRequest) =>
   s3.upload(params).promise();
 
 export const getProcess = () => process;
+
+export const downloadFile = async (url: string, outputPath: string) =>
+  runChildProcess(`wget ${url} -O ${outputPath}`);
