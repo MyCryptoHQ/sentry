@@ -5,7 +5,7 @@ import * as fse from 'fs-extra';
 import './pretest';
 import { EXPECTED_SITE_FOLDER_NAME, TEMP_WORKING, CONFIG } from './pretest';
 import { stopServer, getSentResponses } from './testServer';
-import { resolveOnMockCall, sleep } from './helpers';
+import { resolveOnMockCall, sleep } from '../helpers';
 
 jest.setTimeout(15000);
 

@@ -7,11 +7,11 @@ import { APP_NAME } from './app';
 
 export interface IGithubAssetConfigurable {
   MODE: 'githubAssetDiff';
-  TRACE_ACTIONS?: boolean;
   WORKER_NAME: string;
   REPO_URL: string;
   POLL_INTERVAL: number;
   AWS_BUCKET?: string;
+  TRACE_ACTIONS?: boolean;
   WORKING_DIR?: string;
   LOG_HEX_COLOR?: string;
   LOG_LEVEL_CONSOLE?: TLogLevel;

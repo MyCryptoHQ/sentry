@@ -67,7 +67,7 @@ export function* handleGithubAssetIntervalStart() {
 
 export function* handleGithubAssetStart() {
   const manifest: IGithubAssetAnalysis[] = yield select(getManifest);
-  console.log('handleGHASSET START');
+
   try {
     yield call(emptyCloneDir);
 
@@ -82,8 +82,7 @@ export function* handleGithubAssetStart() {
     }
   } catch (err) {
     console.log(err);
-    _log.error('A fatal error occurred!!!:\n');
-    _log.error(err.msg);
+    _log.error('A fatal error occurred in handleGithubAssetStart:', err);
     yield put(githubAssetFinish());
   }
 }

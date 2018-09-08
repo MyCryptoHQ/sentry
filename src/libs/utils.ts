@@ -1,4 +1,5 @@
 import { createHash } from 'crypto';
+import { spawn } from 'child_process';
 
 import { call } from 'redux-saga/effects';
 import { SagaIterator } from 'redux-saga';
@@ -6,7 +7,7 @@ import * as klaw from 'klaw';
 import * as jsBeautify from 'js-beautify';
 import * as fse from 'fs-extra';
 import * as AWS from 'aws-sdk';
-import { runChildProcess } from './siteDiff';
+import { runChildProcess } from './pure';
 
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 
