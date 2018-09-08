@@ -1,6 +1,7 @@
 import { transports, Logger, format, createLogger } from 'winston';
 const { combine, timestamp, printf } = format;
 const chalk = require('chalk');
+const { red } = chalk;
 
 import { getConfig } from './app';
 
@@ -63,11 +64,23 @@ export const logger = createLogger({
   ]
 });
 
-type TLocalLogger = { [level in TLogLevel]: (message: string) => any };
+type TLocalLogger = { [level in TLogLevel]: (...args: any[]) => any };
 
 export const makeLocalLogger = (moduleName: string): TLocalLogger => {
-  const handler = (level: string) => (message: string) =>
+  const handler = (level: string) => (...args: any[]) => {
+    let message: string = args
+      .map((arg: any) => {
+        if (arg instanceof Error) {
+          return red(`${arg.stack || arg.message}`);
+        } else {
+          return arg;
+        }
+      })
+      .join('\n');
+
     logger.log({ level, moduleName, message });
+  };
+
   let _log: any = {};
   logLevels.forEach(level => (_log[level] = handler(level)));
   return _log;
