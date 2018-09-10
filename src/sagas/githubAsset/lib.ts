@@ -39,6 +39,10 @@ export function* downloadAssetsToCloneDir() {
   const { assets }: any = yield call([resp, 'json']);
   let downloaded: string[] = [];
 
+  if (!Array.isArray(assets)) {
+    return downloaded;
+  }
+
   for (const { browser_download_url } of assets) {
     const fileName = path.basename(browser_download_url);
     const filePath = path.resolve(CLONE_DIR, fileName);
