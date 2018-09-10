@@ -200,20 +200,21 @@ export const detectChangedFiles = (
     }, false)
   );
 
-export const getComparePath = (filePath: string, siteUrl: string): string =>
-  filePath
+export const getComparePath = (filePath: string, siteUrl: string): string => {
+  const siteBase = siteUrl
+    .replace('http://', '')
+    .replace('https://', '')
+    .replace('.', '.')
+    .split('/')[0];
+
+  const cloneCacheReg = new RegExp(`^${siteBase}\.(clone|cache)`);
+
+  return filePath
     .split('/')
     .reduce((sum, val) => {
-      const siteBase = siteUrl
-        .replace('http://', '')
-        .replace('https://', '')
-        .replace('.', '.');
-
-      const regex = new RegExp(`^${siteBase}\.(clone|cache)`);
-
       if (sum.length) {
         return [...sum, val];
-      } else if (regex.test(val)) {
+      } else if (cloneCacheReg.test(val)) {
         return [''];
       } else {
         return [];
@@ -221,6 +222,7 @@ export const getComparePath = (filePath: string, siteUrl: string): string =>
     }, [])
     .filter(x => x.length)
     .join('/');
+};
 
 export const hasReportChanged = (report: ISiteDiffReport): boolean =>
   !!report.newFiles.length || !!report.changedFiles.length || !!report.deletedFiles.length;
