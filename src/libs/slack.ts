@@ -16,15 +16,22 @@ export const parseMessage = (msg: ISlackMessage, slackBotRegex: RegExp): string 
 
 export interface ICmdAndArgs {
   cmd: string | undefined;
-  args: string[];
+  args: string[] | undefined;
 }
 
-export const parseCmdAndArgs = (text: string): ICmdAndArgs => {
-  const args = text.split(' ');
-  const cmd = args.shift();
+export const parseCmdAndArgs = (isWorkerCmd: boolean) => ({ text }: ISlackMessage): ICmdAndArgs => {
+  const split = isWorkerCmd ? text.split(' ').slice(2) : text.split(' ').slice(1);
+  const cmd = split[0];
+  const args = split.slice(1);
 
   return { cmd, args };
 };
+
+export const parseWorkerCmdAndArgs = (msg: ISlackMessage): ICmdAndArgs =>
+  parseCmdAndArgs(true)(msg);
+
+export const parseParentCmdAndArgs = (msg: ISlackMessage): ICmdAndArgs =>
+  parseCmdAndArgs(false)(msg);
 
 export const replyDirect = (msg: ISlackMessage, newMessage: string): string =>
   `<@${msg.user}> ${newMessage}`;
