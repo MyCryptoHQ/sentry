@@ -61,8 +61,6 @@ const constructSummaryMessage = (configs: TWorkerConfigs) => {
       uptime: getDaysAndHoursBetweenDates(startedAt, new Date())
     };
 
-    console.log('WADDDDUP!');
-    console.log(ret);
     return ret;
   });
   const columns = columnify(info);
