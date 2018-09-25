@@ -4,7 +4,7 @@ import { delay } from 'redux-saga';
 import { call, all, put, takeEvery, select } from 'redux-saga/effects';
 
 import { ISiteDiffConfig, getConfig, makeLocalLogger } from '../../configs';
-import { unminifyJSinDir, setCloneAsCache } from './lib';
+import { unminifyJSinDir, setCloneAsCache, calcCacheRootHash } from './lib';
 import {
   cloneWebsite,
   enumerateFilesInDir,
@@ -24,7 +24,10 @@ import {
   slackMessageOutgoing,
   siteDiffIntervalStart,
   siteDiffStart,
-  siteDiffFinish
+  siteDiffFinish,
+  siteDiffChangeDetected,
+  ISiteDiffChangeDetectedAction,
+  siteDiffInitRootHash
 } from '../../actions';
 import { getWorking, getSlackChannelsWhitelist } from '../../selectors';
 
@@ -63,15 +66,18 @@ export function* initSiteDiff() {
 
     const empty = yield call(isDirectoryEmpty, SITE_CACHE_DIR);
 
-    if (!empty) return;
+    if (empty) {
+      _log.debug('Cache is empty, creating cache');
 
-    _log.debug('Cache is empty, creating cache');
+      yield call(fse.remove, SITE_CLONE_DIR);
+      yield call(cloneAndUnminifySite);
+      yield call(setCloneAsCache);
 
-    yield call(fse.remove, SITE_CLONE_DIR);
-    yield call(cloneAndUnminifySite);
-    yield call(setCloneAsCache);
+      _log.debug('Cache created');
+    }
 
-    _log.debug('Cache created');
+    const cacheRootHash = yield call(calcCacheRootHash);
+    yield put(siteDiffInitRootHash(cacheRootHash));
   } catch (err) {
     _log.error('initSiteDiff - critical error');
     _log.error(err);
@@ -144,17 +150,22 @@ export function* analyzeSiteDiffReport(report: ISiteDiffReport) {
       _log.info('Uploading HTML diff to S3 bucket');
       report.location = yield call(uploadSiteDiffToS3, report);
     }
+    report.slackMessage = yield call(genSlackReportMsg, report, SITE_URL);
 
     yield call(createSnapshot, SITE_CACHE_DIR, SITE_CLONE_DIR, SITE_SNAPSHOTS_DIR, report);
 
     _log.debug('analyzeSiteDiffReport - setting clone as cache');
     yield call(setCloneAsCache);
 
-    yield call(communicateSiteChangedToSlack, report);
-    _log.info('Sent alert to slack');
+    yield put(siteDiffChangeDetected(report));
   } else {
     _log.info('No change detected');
   }
+}
+
+export function* handleSiteChangeDetected({ report }: ISiteDiffChangeDetectedAction) {
+  yield call(communicateSiteChangedToSlack, report);
+  _log.info('Sent alert to slack');
 }
 
 export function* uploadSiteDiffToS3(report: ISiteDiffReport) {
@@ -173,12 +184,8 @@ export function* uploadSiteDiffToS3(report: ISiteDiffReport) {
 
 export function* communicateSiteChangedToSlack(report: ISiteDiffReport) {
   const slackChannelsWhitelist: string[] = yield select(getSlackChannelsWhitelist);
-  const { SITE_URL }: ISiteDiffConfig = yield call(getConfig);
-
-  const slackMsg = yield call(genSlackReportMsg, report, SITE_URL);
-
   const msgActions = slackChannelsWhitelist.map(channel =>
-    put(slackMessageOutgoing(slackMsg, channel))
+    put(slackMessageOutgoing(report.slackMessage, channel))
   );
   yield all(msgActions);
 }

@@ -1,12 +1,13 @@
 import { WorkerTypeKeys, TWorkerActions, IWorkerStartAction, IWorkerCloseAction } from '../actions';
-import { TAppConfig } from '../configs';
+import { TWorkerConfig } from '../configs';
 
 export interface IWorkerState {
   workers: {
     [workerName: string]: {
       clusterId: number;
       workerName: string;
-      config: TAppConfig;
+      config: TWorkerConfig;
+      startedAt: Date;
     };
   };
 }
@@ -35,6 +36,7 @@ const reduceWorkerStart = (
     workers: {
       ...state.workers,
       [workerName]: {
+        startedAt: new Date(),
         workerName,
         clusterId,
         config

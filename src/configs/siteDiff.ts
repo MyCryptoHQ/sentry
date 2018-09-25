@@ -7,11 +7,11 @@ import { APP_NAME } from './app';
 
 export interface ISiteDiffConfigurable {
   MODE: 'siteDiff';
-  TRACE_ACTIONS?: boolean;
   WORKER_NAME: string;
   SITE_URL: string;
   SITE_POLL_INTERVAL: number;
   AWS_ENABLED?: boolean;
+  TRACE_ACTIONS?: boolean;
   AWS_BUCKET?: string;
   WORKING_DIR?: string;
   LOG_HEX_COLOR?: string;

@@ -95,7 +95,10 @@ export function* handleGithubAssetChanged({ report }: IGithubAssetUpdatedAction)
     // set clone as new cache
     yield call(setCloneAsCache);
 
-    yield put(githubAssetUpdated(report));
+    const { REPO_BASE_NAME }: IGithubAssetConfig = yield call(getConfig);
+    const slackMessage = genGithubAssetSlackMessage(report, REPO_BASE_NAME);
+
+    yield put(githubAssetUpdated(report, slackMessage));
   } catch (err) {
     _log.error('A critical error occurred:\n');
     _log.error(err);
@@ -103,10 +106,8 @@ export function* handleGithubAssetChanged({ report }: IGithubAssetUpdatedAction)
   }
 }
 
-export function* handleGithubAssetUpdated({ report }: IGithubAssetUpdatedAction) {
-  const { REPO_BASE_NAME }: IGithubAssetConfig = yield call(getConfig);
+export function* handleGithubAssetUpdated({ slackMessage }: IGithubAssetUpdatedAction) {
   // communicate to slack
-  const slackMessage = genGithubAssetSlackMessage(report, REPO_BASE_NAME);
   yield call(broadcastToSlackWhitelist, slackMessage);
   yield put(githubAssetFinish());
 }

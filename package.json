@@ -45,6 +45,7 @@
     "@types/winston": "2.3.9",
     "aws-sdk": "^2.247.1",
     "chalk": "2.4.1",
+    "columnify": "^1.5.4",
     "connect": "^3.6.6",
     "fs-extra": "^5.0.0",
     "js-beautify": "^1.7.5",

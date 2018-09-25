@@ -2,7 +2,13 @@ import { SagaIterator } from 'redux-saga';
 import { all, call, fork } from 'redux-saga/effects';
 import * as fse from 'fs-extra';
 
-import { enumerateFilesInDir, unminifyJS, identifyJsFiles } from '../../libs';
+import {
+  enumerateFilesInDir,
+  unminifyJS,
+  identifyJsFiles,
+  processFileList,
+  calcSiteDiffRootHash
+} from '../../libs';
 import { getConfig, ISiteDiffConfig } from '../../configs';
 
 export function* unminifyJSinDir(dir: string): SagaIterator {
@@ -20,4 +26,12 @@ export function* setCloneAsCache() {
 
   // make clone dir the cache
   yield call(fse.move, SITE_CLONE_DIR, SITE_CACHE_DIR);
+}
+
+export function* calcCacheRootHash() {
+  const { SITE_CACHE_DIR, SITE_URL }: ISiteDiffConfig = yield call(getConfig);
+  const fileList = yield call(enumerateFilesInDir, SITE_CACHE_DIR);
+  const processedFileList = yield call(processFileList, fileList, SITE_URL);
+
+  return calcSiteDiffRootHash(processedFileList);
 }

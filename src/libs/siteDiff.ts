@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as jsBeautify from 'js-beautify';
 import * as fse from 'fs-extra';
 
-import { enumerateFilesInDir, hashFileSha256, IKlawFileInfo } from './utils';
+import { enumerateFilesInDir, hashFileSha256, IKlawFileInfo, hashSha256 } from './utils';
 import { runChildProcess } from './pure';
 
 export const getSiteBaseName = (url: string): string =>
@@ -114,6 +114,7 @@ export const generateReport = async (
   return {
     cachedManifest: oldFileList,
     clonedManifest: newFileList,
+    clonedRootHash: calcSiteDiffRootHash(newFileList),
     newFiles,
     deletedFiles,
     changedFiles,
@@ -130,7 +131,18 @@ export interface ISiteDiffReport {
   changedFiles: ISiteDiffFileInfo[];
   ignoredFiles: ISiteDiffFileInfo[];
   htmlDiffs: string[];
+  clonedRootHash: string;
   location?: string;
+  slackMessage?: string;
+}
+
+export function calcSiteDiffRootHash(manifest: ISiteDiffFileInfo[]) {
+  const concatHash = manifest
+    .map(({ hash }) => hash)
+    .sort()
+    .join('');
+
+  return hashSha256(concatHash);
 }
 
 export const getHTMLDiffFromTwoFiles = (file1Path: string, file2Path: string): Promise<string> =>
@@ -278,7 +290,7 @@ export const buildMsgFileList = (files: ISiteDiffFileInfo[]): string =>
   files.length ? files.map(file => ` - \`${file.comparePath}\`\n`).join('') : '';
 
 export const genDiffMsg = (report: ISiteDiffReport): string =>
-  report.location ? `\nA HTML diff can be viewed here: ${report.location}` : '';
+  report.location ? `\nA HTML diff can be viewed here: ${report.location}\n` : '';
 
 export const genSlackReportMsg = (report: ISiteDiffReport, website: string): string =>
   `<!channel>, changes to ${website} have been detected:` +
@@ -291,4 +303,5 @@ export const genSlackReportMsg = (report: ISiteDiffReport, website: string): str
   `${buildMsgFileList(report.changedFiles)}` +
   `*${report.ignoredFiles.length} ignored files*\n` +
   `${buildMsgFileList(report.ignoredFiles)}` +
-  `${genDiffMsg(report)}`;
+  `${genDiffMsg(report)}` +
+  `\nRoot hash is now: \`${report.clonedRootHash}\``;
