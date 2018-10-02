@@ -1,6 +1,6 @@
 import { call, put, select } from 'redux-saga/effects';
 import { ISlackWorkerCommandAction, slackMessageOutgoing, ISlackMessage } from '../../actions';
-import { parseWorkerCmdAndArgs, replyDirect, ICmdAndArgs } from '../../libs';
+import { parseWorkerCmdAndArgs, replyDirect, ICmdAndArgs, prettyPrintDate } from '../../libs';
 import { handleNotFound, handlePing } from '../shared';
 import { getSummaryInfo, ISummaryInfo, getReports } from '../../selectors';
 import { IChangeInfo } from '../../reducers/siteDiff';
@@ -17,10 +17,13 @@ export function* handleSiteDiffCommand({ msg }: ISlackWorkerCommandAction) {
       break;
     case '--summary':
       resp = yield call(handleSummary, msg);
+      break;
     case '--history':
       resp = yield call(handleHistory, msg);
+      break;
     case '--report':
       resp = yield call(handleReport, msg, parsed);
+      break;
     default:
       resp = handleNotFound(msg);
       break;
@@ -40,8 +43,8 @@ const genSummaryMsg = ({ cacheRootHash, lastChange, lastPolled }: ISummaryInfo) 
   `
 \`\`\`
 Current root hash:    ${cacheRootHash}
-Last change detected: ${lastChange.getUTCDate()}
-Last checked:         ${lastPolled.getUTCDate()}
+Last change detected: ${prettyPrintDate(lastChange)}
+Last checked:         ${prettyPrintDate(lastPolled)}
 \`\`\``;
 
 function* handleHistory(msg: ISlackMessage) {

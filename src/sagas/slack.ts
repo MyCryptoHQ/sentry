@@ -21,10 +21,10 @@ import { getWorkerNames, TWorkerNames, getSlackChannelsWhitelist } from '../sele
 const _log = makeLocalLogger('slack');
 
 export function* isWorkerCommand({ text }: ISlackMessage): SagaIterator {
-  const firstArg = text.split(' ')[0];
+  const secondArg = text.split(' ')[1];
   const workerNames: TWorkerNames[] = yield select(getWorkerNames);
 
-  return workerNames.indexOf(firstArg) !== -1;
+  return workerNames.indexOf(secondArg) !== -1;
 }
 
 function* handleSlackMessageIncoming({ msg }: ISlackMessageIncomingAction) {

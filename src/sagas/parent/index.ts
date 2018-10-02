@@ -2,7 +2,7 @@ import * as cluster from 'cluster';
 
 import * as fse from 'fs-extra';
 import { SagaIterator } from 'redux-saga';
-import { call, put, fork, takeEvery } from 'redux-saga/effects';
+import { call, put, fork, select, takeEvery } from 'redux-saga/effects';
 
 import { getChildConfigPaths } from './lib';
 import { handleParentCommand } from './comms';
@@ -15,8 +15,13 @@ import {
   IWorkerStartAction,
   WorkerTypeKeys,
   SlackTypeKeys,
-  slackChannelsWhitelistSet
+  slackChannelsWhitelistSet,
+  ISlackMessage,
+  ISlackWorkerCommandAction,
+  slackWorkerCommand
 } from '../../actions';
+import { getWorkerNamesAndClusterIds } from '../../selectors';
+import { getWorkerNameFromSlackMsg } from '../../libs';
 
 function* startAllWorkers(): SagaIterator {
   const configPaths: string[] = yield call(getChildConfigPaths);
@@ -54,8 +59,21 @@ function* initWorker({ clusterId }: IWorkerStartAction): SagaIterator {
   cluster.workers[clusterId].send(slackChannelsWhitelistSet(SLACK_CHANNELS_WHITELIST));
 }
 
+function* handleWorkerCommand({ msg }: ISlackWorkerCommandAction) {
+  const workerName = getWorkerNameFromSlackMsg(msg);
+  const namesAndIds = yield select(getWorkerNamesAndClusterIds);
+  const nameAndId = namesAndIds.find((o: any) => o.name === workerName);
+
+  if (!nameAndId) {
+    throw new Error(`Could not find clusterId with worker name ${workerName}`);
+  }
+
+  cluster.workers[nameAndId.clusterId].send(slackWorkerCommand(msg));
+}
+
 export function* parentModeSaga() {
   yield fork(startAllWorkers);
   yield takeEvery(WorkerTypeKeys.WORKER_ONLINE, initWorker);
   yield takeEvery(SlackTypeKeys.SLACK_PARENT_COMMAND, handleParentCommand);
+  yield takeEvery(SlackTypeKeys.SLACK_WORKER_COMMAND, handleWorkerCommand);
 }

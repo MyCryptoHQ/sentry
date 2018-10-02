@@ -9,12 +9,16 @@ export const getManifest = (state: IAppState): IGithubAssetAnalysis[] => state.g
 
 export interface IGithubAssetSummaryInfo {
   rootHash: string;
-  lastPolled: Date;
-  lastChange: Date;
+  lastPolled: Date | null;
+  lastChange: Date | null;
 }
 export const getAssetSummaryInfo = (state: IAppState): IGithubAssetSummaryInfo => {
   const { rootHash, reports, lastPolled } = state.githubAsset;
-  const lastChange = reports[reports.length - 1].timeOfChange;
+  let lastChange = null;
+
+  if (reports.length) {
+    lastChange = reports[reports.length - 1].timeOfChange;
+  }
 
   return {
     rootHash,
