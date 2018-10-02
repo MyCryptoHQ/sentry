@@ -13,8 +13,6 @@ const web = new WebClient(BOT_TOKEN);
 rtm.on('authenticated', parseDataAndExit);
 rtm.start();
 
-// web.channels.list().then(parseDataAndExit);
-
 async function parseDataAndExit(rtmStartData) {
   const availableChannels = [];
   const botName = rtmStartData.self.name;
