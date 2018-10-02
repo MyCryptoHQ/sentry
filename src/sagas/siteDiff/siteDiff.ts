@@ -4,7 +4,7 @@ import { delay } from 'redux-saga';
 import { call, all, put, takeEvery, select } from 'redux-saga/effects';
 
 import { ISiteDiffConfig, getConfig, makeLocalLogger } from '../../configs';
-import { isDirectoryEmpty, unminifyJSinDir, setCloneAsCache } from './lib';
+import { unminifyJSinDir, setCloneAsCache } from './lib';
 import {
   cloneWebsite,
   enumerateFilesInDir,
@@ -16,7 +16,8 @@ import {
   uploadToS3,
   buildS3FileName,
   IKlawFileInfo,
-  ISiteDiffReport
+  ISiteDiffReport,
+  isDirectoryEmpty
 } from '../../libs';
 import {
   SiteDiffTypeKeys,

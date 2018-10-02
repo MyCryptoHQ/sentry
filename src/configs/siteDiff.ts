@@ -35,7 +35,7 @@ export const makeSiteDiffConfig = (config: ISiteDiffConfigurable): ISiteDiffConf
   const WORKING_DIR = config.WORKING_DIR
     ? path.resolve(config.WORKING_DIR)
     : path.resolve(homedir(), `.${APP_NAME}`, 'siteDiff', SITE_BASE_NAME);
-  const LOG_FILE_NAME = 'parent.log';
+  const LOG_FILE_NAME = `${config.WORKER_NAME}.log`;
 
   return {
     // set defaults

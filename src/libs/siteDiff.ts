@@ -5,33 +5,13 @@ import * as jsBeautify from 'js-beautify';
 import * as fse from 'fs-extra';
 
 import { enumerateFilesInDir, hashFileSha256, IKlawFileInfo } from './utils';
+import { runChildProcess } from './pure';
 
 export const getSiteBaseName = (url: string): string =>
   url
     .replace('http://', '')
     .replace('https://', '')
     .replace('/', '');
-
-export const runChildProcess = (cmd: string): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const child = spawn('sh', ['-c', cmd]);
-    const output: string[] = [];
-
-    child.stdout.on('data', (data: Buffer) => {
-      output.push(data.toString());
-    });
-
-    child.stderr.on('data', (data: string) => {
-      output.push(data);
-    });
-
-    child.on('close', (code: any) => {
-      if (code !== 0) {
-        return reject(`Child process exited with code: ${code}, ${output}`);
-      }
-      resolve(output.join(''));
-    });
-  });
 
 export const cloneWebsite = (url: string, targetDir: string): Promise<string> =>
   runChildProcess(
@@ -220,20 +200,21 @@ export const detectChangedFiles = (
     }, false)
   );
 
-export const getComparePath = (filePath: string, siteUrl: string): string =>
-  filePath
+export const getComparePath = (filePath: string, siteUrl: string): string => {
+  const siteBase = siteUrl
+    .replace('http://', '')
+    .replace('https://', '')
+    .replace('.', '.')
+    .split('/')[0];
+
+  const cloneCacheReg = new RegExp(`^${siteBase}\.(clone|cache)`);
+
+  return filePath
     .split('/')
     .reduce((sum, val) => {
-      const siteBase = siteUrl
-        .replace('http://', '')
-        .replace('https://', '')
-        .replace('.', '.');
-
-      const regex = new RegExp(`^${siteBase}\.(clone|cache)`);
-
       if (sum.length) {
         return [...sum, val];
-      } else if (regex.test(val)) {
+      } else if (cloneCacheReg.test(val)) {
         return [''];
       } else {
         return [];
@@ -241,6 +222,7 @@ export const getComparePath = (filePath: string, siteUrl: string): string =>
     }, [])
     .filter(x => x.length)
     .join('/');
+};
 
 export const hasReportChanged = (report: ISiteDiffReport): boolean =>
   !!report.newFiles.length || !!report.changedFiles.length || !!report.deletedFiles.length;

@@ -5,6 +5,7 @@ import { SagaIterator } from 'redux-saga';
 import { call, put, fork, takeEvery } from 'redux-saga/effects';
 
 import { getChildConfigPaths } from './lib';
+import { handleParentCommand } from './comms';
 import { TWorkerConfig, IParentConfig, getConfig } from '../../configs';
 import { store } from '../../store';
 import {
@@ -13,6 +14,7 @@ import {
   workerOnline,
   IWorkerStartAction,
   WorkerTypeKeys,
+  SlackTypeKeys,
   slackChannelsWhitelistSet
 } from '../../actions';
 
@@ -55,4 +57,5 @@ function* initWorker({ clusterId }: IWorkerStartAction): SagaIterator {
 export function* parentModeSaga() {
   yield fork(startAllWorkers);
   yield takeEvery(WorkerTypeKeys.WORKER_ONLINE, initWorker);
+  yield takeEvery(SlackTypeKeys.SLACK_PARENT_COMMAND, handleParentCommand);
 }
