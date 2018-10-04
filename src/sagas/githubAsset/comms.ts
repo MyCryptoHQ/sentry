@@ -45,7 +45,7 @@ function* handleSummary(msg: ISlackMessage) {
 
 const genSummaryMsg = ({ rootHash, lastChange, lastPolled }: IGithubAssetSummaryInfo) => {
   if (!lastChange || !lastPolled) {
-    return 'Summary not yet available.';
+    return 'Summary not yet available, waiting on initial run.';
   } else {
     return `\`\`\`
   Current root hash:    ${rootHash}
@@ -62,6 +62,10 @@ function* handleHistory(msg: ISlackMessage) {
 }
 
 const genAssetHistoryMsg = (reports: IAssetChangeInfo[]): string => {
+  if (!reports.length) {
+    return 'No changes have been detected during the lifetime of the app.';
+  }
+
   const cells = reports.map(({ newRootHash, timeOfChange }: IAssetChangeInfo, index) => ({
     report_index: index,
     time_of_change: timeOfChange,
@@ -78,8 +82,10 @@ function* handleReport(msg: ISlackMessage, parsed: ICmdAndArgs) {
   return replyDirect(msg, report);
 }
 
+const sanitizeChannelCall = (msg: string): string => msg.replace('<!channel>', '@channel');
+
 const genAssetReportMsg = ({ args }: ICmdAndArgs, reports: IAssetChangeInfo[]): string => {
-  const failMsg = 'that is not a valid report index.';
+  const failMsg = 'That is not a valid report index.';
 
   try {
     const index = parseInt(args[0]);
@@ -89,7 +95,7 @@ const genAssetReportMsg = ({ args }: ICmdAndArgs, reports: IAssetChangeInfo[]): 
       return failMsg;
     }
 
-    return `\n\`\`\`${slackReport}\`\`\``;
+    return `\n\`\`\`${sanitizeChannelCall(slackReport)}\`\`\``;
   } catch {
     return failMsg;
   }

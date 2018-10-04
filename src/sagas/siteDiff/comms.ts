@@ -43,8 +43,10 @@ const genSummaryMsg = ({ cacheRootHash, lastChange, lastPolled }: ISummaryInfo) 
   `
 \`\`\`
 Current root hash:    ${cacheRootHash}
-Last change detected: ${prettyPrintDate(lastChange)}
-Last checked:         ${prettyPrintDate(lastPolled)}
+Last change detected: ${
+    lastChange ? prettyPrintDate(lastChange) : 'No change during lifetime of app'
+  }
+Last checked:         ${lastPolled ? prettyPrintDate(lastPolled) : 'Site not yet polled'}
 \`\`\``;
 
 function* handleHistory(msg: ISlackMessage) {
@@ -55,6 +57,10 @@ function* handleHistory(msg: ISlackMessage) {
 }
 
 const genHistoryMsg = (reports: IChangeInfo[]): string => {
+  if (!reports.length) {
+    return 'No changes have been detected during the lifetime of the app.';
+  }
+
   const cells = reports.map(({ newRootHash, timeOfChange }: IChangeInfo, index) => ({
     report_index: index,
     time_of_change: timeOfChange,
@@ -72,7 +78,7 @@ function* handleReport(msg: ISlackMessage, parsed: ICmdAndArgs) {
 }
 
 const genReportMsg = ({ args }: ICmdAndArgs, reports: IChangeInfo[]): string => {
-  const failMsg = 'that is not a valid report index.';
+  const failMsg = 'That is not a valid report index.';
 
   try {
     const index = parseInt(args[0]);
