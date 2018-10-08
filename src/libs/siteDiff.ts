@@ -11,7 +11,7 @@ export const getSiteBaseName = (url: string): string =>
   url
     .replace('http://', '')
     .replace('https://', '')
-    .replace('/', '');
+    .replace(/\//g, '');
 
 export const cloneWebsite = async (url: string, targetDir: string): Promise<string> => {
   try {
