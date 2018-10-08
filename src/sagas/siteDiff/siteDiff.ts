@@ -104,7 +104,7 @@ export function* buildSiteDiffReport() {
   const {
     SITE_CACHE_DIR,
     SITE_CLONE_DIR,
-    SITE_URL,
+    SITE_BASE_NAME,
     SITE_IGNORED_FILES
   }: ISiteDiffConfig = yield call(getConfig);
 
@@ -114,9 +114,9 @@ export function* buildSiteDiffReport() {
 
   const cacheFiles: IKlawFileInfo[] = yield call(enumerateFilesInDir, SITE_CACHE_DIR);
   const cloneFiles: IKlawFileInfo[] = yield call(enumerateFilesInDir, SITE_CLONE_DIR);
-  const cacheFilesProcessed = yield call(processFileList, cacheFiles, SITE_URL);
+  const cacheFilesProcessed = yield call(processFileList, cacheFiles, SITE_BASE_NAME);
 
-  const cloneFilesProcessed = yield call(processFileList, cloneFiles, SITE_URL);
+  const cloneFilesProcessed = yield call(processFileList, cloneFiles, SITE_BASE_NAME);
 
   _log.debug('buildSiteDiffReport - generating report');
   const report = yield call(

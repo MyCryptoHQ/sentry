@@ -29,9 +29,9 @@ export function* setCloneAsCache() {
 }
 
 export function* calcCacheRootHash() {
-  const { SITE_CACHE_DIR, SITE_URL }: ISiteDiffConfig = yield call(getConfig);
+  const { SITE_CACHE_DIR, SITE_BASE_NAME }: ISiteDiffConfig = yield call(getConfig);
   const fileList = yield call(enumerateFilesInDir, SITE_CACHE_DIR);
-  const processedFileList = yield call(processFileList, fileList, SITE_URL);
+  const processedFileList = yield call(processFileList, fileList, SITE_BASE_NAME);
 
   return calcSiteDiffRootHash(processedFileList);
 }
