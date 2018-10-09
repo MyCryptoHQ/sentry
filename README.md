@@ -95,6 +95,8 @@ Breaking down this config:
 * `WORKER_NAME` - A plain English name to call the worker process. Must not have spaces. Do not configure more than one worker with the same name.
 * `SITE_URL` - The site the worker will poll for changes. Do not configure more than one worker with the same URL.
 * `SITE_POLL_INTERVAL` - The time, in milliseconds, for how often the worker should check for changes.
+* `AWS_ENABLED` - [Optional] - A boolean value to enable uploading HTML diffs on detected file change.
+* `AWS_BUCKET` - [Optional] - The bucket name to upload HTML diffs to. Must be populated if `AWS_ENABLED` is set. Access to AWS must be configured independent of Sentry.
 
 Consult the typing `ISiteDiffConfigurable` for a full list of configurable `siteDiff` options.
 
