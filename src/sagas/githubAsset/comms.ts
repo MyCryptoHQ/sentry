@@ -1,6 +1,12 @@
 import { call, put, select } from 'redux-saga/effects';
 import { ISlackWorkerCommandAction, slackMessageOutgoing, ISlackMessage } from '../../actions';
-import { parseWorkerCmdAndArgs, replyDirect, ICmdAndArgs, prettyPrintDate } from '../../libs';
+import {
+  parseWorkerCmdAndArgs,
+  replyDirect,
+  ICmdAndArgs,
+  prettyPrintDate,
+  sanitizeChannelCall
+} from '../../libs';
 import { handleNotFound, handlePing } from '../shared';
 import {
   IGithubAssetSummaryInfo,
@@ -81,8 +87,6 @@ function* handleReport(msg: ISlackMessage, parsed: ICmdAndArgs) {
 
   return replyDirect(msg, report);
 }
-
-const sanitizeChannelCall = (msg: string): string => msg.replace('<!channel>', '@channel');
 
 const genAssetReportMsg = ({ args }: ICmdAndArgs, reports: IAssetChangeInfo[]): string => {
   const failMsg = 'That is not a valid report index.';

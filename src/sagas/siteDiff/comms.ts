@@ -1,6 +1,12 @@
 import { call, put, select } from 'redux-saga/effects';
 import { ISlackWorkerCommandAction, slackMessageOutgoing, ISlackMessage } from '../../actions';
-import { parseWorkerCmdAndArgs, replyDirect, ICmdAndArgs, prettyPrintDate } from '../../libs';
+import {
+  parseWorkerCmdAndArgs,
+  replyDirect,
+  ICmdAndArgs,
+  prettyPrintDate,
+  sanitizeChannelCall
+} from '../../libs';
 import { handleNotFound, handlePing } from '../shared';
 import { getSummaryInfo, ISummaryInfo, getReports } from '../../selectors';
 import { IChangeInfo } from '../../reducers/siteDiff';
@@ -88,7 +94,7 @@ const genReportMsg = ({ args }: ICmdAndArgs, reports: IChangeInfo[]): string => 
       return failMsg;
     }
 
-    return `\n\`\`\`${slackReport}\`\`\``;
+    return `\n\`\`\`${sanitizeChannelCall(slackReport)}\`\`\``;
   } catch {
     return failMsg;
   }
