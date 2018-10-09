@@ -84,7 +84,9 @@ The `siteDiff` module syncs all files at a given URL and continuously polls for 
   "MODE": "siteDiff",
   "WORKER_NAME": "a-name-without-spaces",
   "SITE_URL": "https://some-url-to-watch.com",
-  "SITE_POLL_INTERVAL": 60000
+  "SITE_POLL_INTERVAL": 60000,
+  "AWS_ENABLED": true,
+  "AWS_BUCKET": "some-bucket-name"
 }
 ```
 
