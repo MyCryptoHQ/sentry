@@ -66,3 +66,6 @@ export const getProcess = () => process;
 
 export const downloadFile = async (url: string, outputPath: string) =>
   runChildProcess(`wget ${url} -O ${outputPath}`);
+
+export const prettyPrintDate = (d: Date) =>
+  `${d.getMonth() + 1}-${d.getDate()}-${d.getFullYear()} ${d.getHours()}:${d.getMinutes()}`;

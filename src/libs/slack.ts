@@ -35,3 +35,7 @@ export const parseParentCmdAndArgs = (msg: ISlackMessage): ICmdAndArgs =>
 
 export const replyDirect = (msg: ISlackMessage, newMessage: string): string =>
   `<@${msg.user}> ${newMessage}`;
+
+export const getWorkerNameFromSlackMsg = ({ text }: ISlackMessage): string => text.split(' ')[1];
+
+export const sanitizeChannelCall = (msg: string): string => msg.replace('<!channel>', '@channel');

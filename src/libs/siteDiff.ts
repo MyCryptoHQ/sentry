@@ -4,28 +4,61 @@ import * as path from 'path';
 import * as jsBeautify from 'js-beautify';
 import * as fse from 'fs-extra';
 
-import { enumerateFilesInDir, hashFileSha256, IKlawFileInfo } from './utils';
+import { enumerateFilesInDir, hashFileSha256, IKlawFileInfo, hashSha256 } from './utils';
 import { runChildProcess } from './pure';
 
 export const getSiteBaseName = (url: string): string =>
   url
     .replace('http://', '')
     .replace('https://', '')
-    .replace('/', '');
+    .replace(/\//g, '');
 
-export const cloneWebsite = (url: string, targetDir: string): Promise<string> =>
-  runChildProcess(
-    `wget \\
-  --mirror \\
-  --page-requisites \\
-  --no-parent \\
-  --reject-regex ".*b[TXT|CSV|JSON|lobEnc].*" \\
-  --random-wait \\
-  -e robots=off \\
-  -P "${targetDir}" \\
-  --no-host-directories \\
-  ${url}`
-  );
+export const cloneWebsite = async (url: string, targetDir: string): Promise<string> => {
+  try {
+    const result = await runChildProcess(
+      `wget \\
+    --mirror \\
+    --page-requisites \\
+    --no-parent \\
+    --reject-regex ".*b[TXT|CSV|JSON|lobEnc].*" \\
+    --random-wait \\
+    -e robots=off \\
+    -P "${targetDir}" \\
+    --no-host-directories \\
+    ${url}`
+    );
+    return result;
+  } catch (err) {
+    const httpErrorCodes = parseHttpErrorCodesFromWgetErrorMessage(err);
+    let shouldThrow = false;
+
+    if (!httpErrorCodes.length) {
+      shouldThrow = true;
+    }
+
+    httpErrorCodes.forEach(code => {
+      if (code !== '404') {
+        shouldThrow = true;
+      }
+    });
+
+    if (shouldThrow) {
+      throw err;
+    } else {
+      console.log('wget encountered errors, but they were all 404');
+      return err.message;
+    }
+  }
+};
+
+const parseHttpErrorCodesFromWgetErrorMessage = (err: Error) =>
+  err.message
+    .split('\n')
+    .filter(line => /^.*ERROR .*$/.test(line))
+    .map(line => {
+      const withoutError = line.split('ERROR ')[1];
+      return withoutError.split(':')[0];
+    });
 
 export const unminifyJSinDir = (directory: string): Promise<any> =>
   new Promise(async (resolve, reject) => {
@@ -58,7 +91,7 @@ export interface ISiteDiffFileInfo {
 
 export const processFileList = (
   fileList: IKlawFileInfo[],
-  siteUrl: string
+  siteBaseName: string
 ): Promise<ISiteDiffFileInfo[]> =>
   new Promise(async (resolve, reject) => {
     const hashedList: ISiteDiffFileInfo[] = [];
@@ -68,7 +101,7 @@ export const processFileList = (
         fileList.map(async (item: IKlawFileInfo) => {
           hashedList.push({
             fullPath: item.path,
-            comparePath: getComparePath(item.path, siteUrl),
+            comparePath: getComparePath(item.path, siteBaseName),
             hash: await hashFileSha256(item.path),
             type: item.stats.isDirectory() ? 'folder' : 'file'
           });
@@ -114,6 +147,7 @@ export const generateReport = async (
   return {
     cachedManifest: oldFileList,
     clonedManifest: newFileList,
+    clonedRootHash: calcSiteDiffRootHash(newFileList),
     newFiles,
     deletedFiles,
     changedFiles,
@@ -130,7 +164,18 @@ export interface ISiteDiffReport {
   changedFiles: ISiteDiffFileInfo[];
   ignoredFiles: ISiteDiffFileInfo[];
   htmlDiffs: string[];
+  clonedRootHash: string;
   location?: string;
+  slackMessage?: string;
+}
+
+export function calcSiteDiffRootHash(manifest: ISiteDiffFileInfo[]) {
+  const concatHash = manifest
+    .map(({ hash }) => hash)
+    .sort()
+    .join('');
+
+  return hashSha256(concatHash);
 }
 
 export const getHTMLDiffFromTwoFiles = (file1Path: string, file2Path: string): Promise<string> =>
@@ -200,13 +245,7 @@ export const detectChangedFiles = (
     }, false)
   );
 
-export const getComparePath = (filePath: string, siteUrl: string): string => {
-  const siteBase = siteUrl
-    .replace('http://', '')
-    .replace('https://', '')
-    .replace('.', '.')
-    .split('/')[0];
-
+export const getComparePath = (filePath: string, siteBase: string): string => {
   const cloneCacheReg = new RegExp(`^${siteBase}\.(clone|cache)`);
 
   return filePath
@@ -278,7 +317,7 @@ export const buildMsgFileList = (files: ISiteDiffFileInfo[]): string =>
   files.length ? files.map(file => ` - \`${file.comparePath}\`\n`).join('') : '';
 
 export const genDiffMsg = (report: ISiteDiffReport): string =>
-  report.location ? `\nA HTML diff can be viewed here: ${report.location}` : '';
+  report.location ? `\nA HTML diff can be viewed here: ${report.location}\n` : '';
 
 export const genSlackReportMsg = (report: ISiteDiffReport, website: string): string =>
   `<!channel>, changes to ${website} have been detected:` +
@@ -291,4 +330,5 @@ export const genSlackReportMsg = (report: ISiteDiffReport, website: string): str
   `${buildMsgFileList(report.changedFiles)}` +
   `*${report.ignoredFiles.length} ignored files*\n` +
   `${buildMsgFileList(report.ignoredFiles)}` +
-  `${genDiffMsg(report)}`;
+  `${genDiffMsg(report)}` +
+  `\nRoot hash is now: \`${report.clonedRootHash}\``;

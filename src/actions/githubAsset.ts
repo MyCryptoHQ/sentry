@@ -55,12 +55,17 @@ export interface IGithubAssetUpdatedAction {
   manifest: IGithubAssetAnalysis[];
   rootHash: string;
   report: IGithubAssetReport;
+  slackMessage: string;
 }
 
-export function githubAssetUpdated(report: IGithubAssetReport): IGithubAssetUpdatedAction {
+export function githubAssetUpdated(
+  report: IGithubAssetReport,
+  slackMessage: string
+): IGithubAssetUpdatedAction {
   const { assets, rootHash } = report;
   return {
     type: GithubAssetTypeKeys.GITHUB_ASSET_UPDATED,
+    slackMessage,
     manifest: assets,
     rootHash,
     report
