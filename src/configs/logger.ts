@@ -1,21 +1,50 @@
-import * as path from 'path';
-import * as winston from 'winston';
+import { transports, Logger, format, createLogger } from 'winston';
+const { combine, timestamp, printf } = format;
+const chalk = require('chalk');
+const { red } = chalk;
 
-import { WORKING_DIR, LOG_LEVEL_CONSOLE, LOG_LEVEL_FILE } from './constants';
+import { getConfig } from './app';
 
-export const LOG_FILE_NAME = 'log.txt';
-export const LOG_FILE_PATH = path.resolve(WORKING_DIR, LOG_FILE_NAME);
-export const logger = new winston.Logger();
+export type TLogLevel = 'error' | 'warn' | 'info' | 'verbose' | 'debug' | 'silly';
+export const logLevels: TLogLevel[] = ['error', 'warn', 'info', 'verbose', 'debug', 'silly'];
 
-logger.add(winston.transports.Console, {
+const {
+  LOG_LEVEL_CONSOLE,
+  LOG_LEVEL_FILE,
+  LOG_FILE_PATH,
+  LOG_HEX_COLOR,
+  WORKER_NAME
+} = getConfig();
+
+const consoleFormat = combine(
+  printf(
+    ({ level, message, moduleName }) =>
+      `${chalk.hex(LOG_HEX_COLOR)(`[${WORKER_NAME}]`)} ${level}: ${
+        moduleName ? `(${moduleName}) ` : ''
+      }${message}`
+  )
+);
+
+const fileFormat = combine(
+  timestamp(),
+  printf(
+    ({ timestamp, level, message, moduleName }) =>
+      `${timestamp ? `${timestamp} ` : ''}${chalk.hex(LOG_HEX_COLOR)(
+        `[${WORKER_NAME}]`
+      )} ${level}: ${moduleName ? `(${moduleName}) ` : ''}${message}`
+  )
+);
+
+const winstonConsoleOptions = {
   level: LOG_LEVEL_CONSOLE,
   prettyPrint: true,
   colorize: true,
   silent: false,
-  timestamp: false
-});
+  timestamp: false,
+  format: consoleFormat
+};
 
-logger.add(winston.transports.File, {
+const winstonFileOptions = {
   prettyPrint: false,
   level: LOG_LEVEL_FILE,
   silent: false,
@@ -24,5 +53,35 @@ logger.add(winston.transports.File, {
   filename: LOG_FILE_PATH,
   maxsize: 40000,
   maxFiles: 10,
-  json: false
+  json: false,
+  format: fileFormat
+};
+
+export const logger = createLogger({
+  transports: [
+    new transports.Console(winstonConsoleOptions),
+    new transports.File(winstonFileOptions)
+  ]
 });
+
+type TLocalLogger = { [level in TLogLevel]: (...args: any[]) => any };
+
+export const makeLocalLogger = (moduleName: string): TLocalLogger => {
+  const handler = (level: string) => (...args: any[]) => {
+    let message: string = args
+      .map((arg: any) => {
+        if (arg instanceof Error) {
+          return red(`${arg.stack || arg.message}`);
+        } else {
+          return arg;
+        }
+      })
+      .join('\n');
+
+    logger.log({ level, moduleName, message });
+  };
+
+  let _log: any = {};
+  logLevels.forEach(level => (_log[level] = handler(level)));
+  return _log;
+};

@@ -1,58 +1,69 @@
-import { createHash } from 'crypto';
 import { spawn } from 'child_process';
 import * as path from 'path';
 
-import * as klaw from 'klaw';
 import * as jsBeautify from 'js-beautify';
 import * as fse from 'fs-extra';
 
-import { enumerateFilesInDir, hashFileSha256, KlawFileInfo } from './utils';
+import { enumerateFilesInDir, hashFileSha256, IKlawFileInfo, hashSha256 } from './utils';
+import { runChildProcess } from './pure';
 
 export const getSiteBaseName = (url: string): string =>
   url
     .replace('http://', '')
     .replace('https://', '')
-    .replace('/', '');
+    .replace(/\//g, '');
 
-export const runChildProcess = (cmd: string): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const child = spawn('sh', ['-c', cmd]);
-    const output: string[] = [];
+export const cloneWebsite = async (url: string, targetDir: string): Promise<string> => {
+  try {
+    const result = await runChildProcess(
+      `wget \\
+    --mirror \\
+    --page-requisites \\
+    --no-parent \\
+    --reject-regex ".*b[TXT|CSV|JSON|lobEnc].*" \\
+    --random-wait \\
+    -e robots=off \\
+    -P "${targetDir}" \\
+    --no-host-directories \\
+    ${url}`
+    );
+    return result;
+  } catch (err) {
+    const httpErrorCodes = parseHttpErrorCodesFromWgetErrorMessage(err);
+    let shouldThrow = false;
 
-    child.stdout.on('data', (data: Buffer) => {
-      output.push(data.toString());
-    });
+    if (!httpErrorCodes.length) {
+      shouldThrow = true;
+    }
 
-    child.stderr.on('data', (data: string) => {
-      output.push(data);
-    });
-
-    child.on('close', (code: any) => {
-      if (code !== 0) {
-        return reject(`Child process exited with code: ${code}, ${output}`);
+    httpErrorCodes.forEach(code => {
+      if (code !== '404') {
+        shouldThrow = true;
       }
-      resolve(output.join(''));
     });
-  });
 
-export const cloneWebsite = (url: string, targetDir: string): Promise<string> =>
-  runChildProcess(
-    `wget \\
-  --mirror \\
-  --page-requisites \\
-  --no-parent \\
-  --reject-regex ".*b[TXT|CSV|JSON|lobEnc].*" \\
-  --random-wait \\
-  -e robots=off \\
-  -P "${targetDir}" \\
-  --no-host-directories \\
-  ${url}`
-  );
+    if (shouldThrow) {
+      throw err;
+    } else {
+      console.log('wget encountered errors, but they were all 404');
+      return err.message;
+    }
+  }
+};
+
+const parseHttpErrorCodesFromWgetErrorMessage = (err: Error) =>
+  err.message
+    .split('\n')
+    .filter(line => /^.*ERROR .*$/.test(line))
+    .map(line => {
+      const withoutError = line.split('ERROR ')[1];
+      return withoutError.split(':')[0];
+    });
 
 export const unminifyJSinDir = (directory: string): Promise<any> =>
   new Promise(async (resolve, reject) => {
     try {
-      const files = await enumerateFilesInDir(directory);
+      const files: IKlawFileInfo[] = await enumerateFilesInDir(directory);
       const minified = files
         .map((fileInfo: any) => fileInfo.path)
         .filter(filePath =>
@@ -68,19 +79,29 @@ export const unminifyJSinDir = (directory: string): Promise<any> =>
     }
   });
 
-export const identifyJsFiles = (files: KlawFileInfo[]) =>
+export const identifyJsFiles = (files: IKlawFileInfo[]) =>
   files.map(info => info.path).filter(filePath => /\.js$/.test(path.basename(filePath)));
 
-export const processFileList = (fileList: object[], siteUrl: string): Promise<object[]> =>
+export interface ISiteDiffFileInfo {
+  fullPath: string;
+  comparePath: string;
+  hash: string;
+  type: 'folder' | 'file';
+}
+
+export const processFileList = (
+  fileList: IKlawFileInfo[],
+  siteBaseName: string
+): Promise<ISiteDiffFileInfo[]> =>
   new Promise(async (resolve, reject) => {
-    const hashedList: any = [];
+    const hashedList: ISiteDiffFileInfo[] = [];
 
     try {
       await Promise.all(
-        fileList.map(async (item: any) => {
+        fileList.map(async (item: IKlawFileInfo) => {
           hashedList.push({
             fullPath: item.path,
-            comparePath: getComparePath(item.path, siteUrl),
+            comparePath: getComparePath(item.path, siteBaseName),
             hash: await hashFileSha256(item.path),
             type: item.stats.isDirectory() ? 'folder' : 'file'
           });
@@ -93,10 +114,10 @@ export const processFileList = (fileList: object[], siteUrl: string): Promise<ob
   });
 
 export const generateReport = async (
-  oldFileList: object[],
-  newFileList: object[],
+  oldFileList: ISiteDiffFileInfo[],
+  newFileList: ISiteDiffFileInfo[],
   ignoredFilesConfig: string[]
-): Promise<any> => {
+): Promise<ISiteDiffReport> => {
   const newFiles = detectNewFiles(oldFileList, newFileList);
   const deletedFiles = detectDeletedFiles(oldFileList, newFileList);
   let changedFiles = detectChangedFiles(oldFileList, newFileList);
@@ -126,6 +147,7 @@ export const generateReport = async (
   return {
     cachedManifest: oldFileList,
     clonedManifest: newFileList,
+    clonedRootHash: calcSiteDiffRootHash(newFileList),
     newFiles,
     deletedFiles,
     changedFiles,
@@ -133,6 +155,28 @@ export const generateReport = async (
     htmlDiffs
   };
 };
+
+export interface ISiteDiffReport {
+  cachedManifest: ISiteDiffFileInfo[];
+  clonedManifest: ISiteDiffFileInfo[];
+  newFiles: ISiteDiffFileInfo[];
+  deletedFiles: ISiteDiffFileInfo[];
+  changedFiles: ISiteDiffFileInfo[];
+  ignoredFiles: ISiteDiffFileInfo[];
+  htmlDiffs: string[];
+  clonedRootHash: string;
+  location?: string;
+  slackMessage?: string;
+}
+
+export function calcSiteDiffRootHash(manifest: ISiteDiffFileInfo[]) {
+  const concatHash = manifest
+    .map(({ hash }) => hash)
+    .sort()
+    .join('');
+
+  return hashSha256(concatHash);
+}
 
 export const getHTMLDiffFromTwoFiles = (file1Path: string, file2Path: string): Promise<string> =>
   runChildProcess(
@@ -158,10 +202,13 @@ export const unminifyJS = (file: string): Promise<void> =>
     });
   });
 
-export const detectNewFiles = (oldFileList: object[], newFileList: object[]): any =>
+export const detectNewFiles = (
+  oldFileList: ISiteDiffFileInfo[],
+  newFileList: ISiteDiffFileInfo[]
+): ISiteDiffFileInfo[] =>
   newFileList.filter(
-    (newItem: any) =>
-      !oldFileList.reduce((found, oldItem: any) => {
+    (newItem: ISiteDiffFileInfo) =>
+      !oldFileList.reduce((found, oldItem) => {
         if (found) {
           return found;
         }
@@ -169,10 +216,13 @@ export const detectNewFiles = (oldFileList: object[], newFileList: object[]): an
       }, false)
   );
 
-export const detectDeletedFiles = (oldFileList: object[], newFileList: object[]): any =>
+export const detectDeletedFiles = (
+  oldFileList: ISiteDiffFileInfo[],
+  newFileList: ISiteDiffFileInfo[]
+): ISiteDiffFileInfo[] =>
   oldFileList.filter(
-    (oldItem: any) =>
-      !newFileList.reduce((found, newItem: any) => {
+    oldItem =>
+      !newFileList.reduce((found, newItem) => {
         if (found) {
           return found;
         }
@@ -180,9 +230,12 @@ export const detectDeletedFiles = (oldFileList: object[], newFileList: object[])
       }, false)
   );
 
-export const detectChangedFiles = (oldFileList: object[], newFileList: object[]): any =>
-  newFileList.filter((newItem: any) =>
-    oldFileList.reduce((found, oldItem: any) => {
+export const detectChangedFiles = (
+  oldFileList: ISiteDiffFileInfo[],
+  newFileList: ISiteDiffFileInfo[]
+): ISiteDiffFileInfo[] =>
+  newFileList.filter(newItem =>
+    oldFileList.reduce((found, oldItem) => {
       if (found) {
         return found;
       }
@@ -192,20 +245,15 @@ export const detectChangedFiles = (oldFileList: object[], newFileList: object[])
     }, false)
   );
 
-export const getComparePath = (filePath: string, siteUrl: string): string =>
-  filePath
+export const getComparePath = (filePath: string, siteBase: string): string => {
+  const cloneCacheReg = new RegExp(`^${siteBase}\.(clone|cache)`);
+
+  return filePath
     .split('/')
     .reduce((sum, val) => {
-      const siteBase = siteUrl
-        .replace('http://', '')
-        .replace('https://', '')
-        .replace('.', '.');
-
-      const regex = new RegExp(`^${siteBase}\.(clone|cache)`);
-
       if (sum.length) {
         return [...sum, val];
-      } else if (regex.test(val)) {
+      } else if (cloneCacheReg.test(val)) {
         return [''];
       } else {
         return [];
@@ -213,9 +261,10 @@ export const getComparePath = (filePath: string, siteUrl: string): string =>
     }, [])
     .filter(x => x.length)
     .join('/');
+};
 
-export const hasReportChanged = (report): boolean =>
-  report.newFiles.length || report.changedFiles.length || report.deletedFiles.length;
+export const hasReportChanged = (report: ISiteDiffReport): boolean =>
+  !!report.newFiles.length || !!report.changedFiles.length || !!report.deletedFiles.length;
 
 export const createSnapshot = (
   cacheDir: string,
@@ -264,13 +313,13 @@ export const buildSnapshotDirName = (): string => `snapshot_${buildTimestampName
 
 export const buildS3FileName = (): string => `diff_${buildTimestampName()}.html`;
 
-export const buildMsgFileList = (files: any[]): string =>
+export const buildMsgFileList = (files: ISiteDiffFileInfo[]): string =>
   files.length ? files.map(file => ` - \`${file.comparePath}\`\n`).join('') : '';
 
-export const genDiffMsg = (report: any): string =>
-  report.location ? `\nA HTML diff can be viewed here: ${report.location}` : '';
+export const genDiffMsg = (report: ISiteDiffReport): string =>
+  report.location ? `\nA HTML diff can be viewed here: ${report.location}\n` : '';
 
-export const genSlackReportMsg = (report: any, website: string): string =>
+export const genSlackReportMsg = (report: ISiteDiffReport, website: string): string =>
   `<!channel>, changes to ${website} have been detected:` +
   `\n\n` +
   `*${report.newFiles.length} new files*\n` +
@@ -281,4 +330,5 @@ export const genSlackReportMsg = (report: any, website: string): string =>
   `${buildMsgFileList(report.changedFiles)}` +
   `*${report.ignoredFiles.length} ignored files*\n` +
   `${buildMsgFileList(report.ignoredFiles)}` +
-  `${genDiffMsg(report)}`;
+  `${genDiffMsg(report)}` +
+  `\nRoot hash is now: \`${report.clonedRootHash}\``;

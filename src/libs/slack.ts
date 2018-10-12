@@ -1,30 +1,41 @@
 import { ISlackMessage } from '../actions';
-import { SLACK_BOT_REGEX, SLACK_CHANNELS_WHITELIST } from '../configs';
 
 export const messageIsNotEdit = (msg: ISlackMessage): any => !msg.hasOwnProperty('message');
 
-export const isPureDirectMention = (msg: ISlackMessage): boolean => SLACK_BOT_REGEX.test(msg.text);
+export const isPureDirectMention = (msg: ISlackMessage, slackBotRegex: RegExp): boolean =>
+  slackBotRegex.test(msg.text);
 
-export const isChannelWhitelisted = (msg: ISlackMessage): boolean =>
-  SLACK_CHANNELS_WHITELIST.indexOf(msg.channel) !== -1;
+export const isChannelWhitelisted = (msg: ISlackMessage, channelWhitelist: string[]): boolean =>
+  channelWhitelist.indexOf(msg.channel) !== -1;
 
-export const parseMessage = (msg: ISlackMessage): string =>
+export const parseMessage = (msg: ISlackMessage, slackBotRegex: RegExp): string =>
   msg.text
-    .replace(SLACK_BOT_REGEX, '')
+    .replace(slackBotRegex, '')
     .toLocaleLowerCase()
     .trim();
 
 export interface ICmdAndArgs {
   cmd: string | undefined;
-  args: string[];
+  args: string[] | undefined;
 }
 
-export const parseCmdAndArgs = (text: string): ICmdAndArgs => {
-  const args = text.split(' ');
-  const cmd = args.shift();
+export const parseCmdAndArgs = (isWorkerCmd: boolean) => ({ text }: ISlackMessage): ICmdAndArgs => {
+  const split = isWorkerCmd ? text.split(' ').slice(2) : text.split(' ').slice(1);
+  const cmd = split[0];
+  const args = split.slice(1);
 
   return { cmd, args };
 };
 
+export const parseWorkerCmdAndArgs = (msg: ISlackMessage): ICmdAndArgs =>
+  parseCmdAndArgs(true)(msg);
+
+export const parseParentCmdAndArgs = (msg: ISlackMessage): ICmdAndArgs =>
+  parseCmdAndArgs(false)(msg);
+
 export const replyDirect = (msg: ISlackMessage, newMessage: string): string =>
   `<@${msg.user}> ${newMessage}`;
+
+export const getWorkerNameFromSlackMsg = ({ text }: ISlackMessage): string => text.split(' ')[1];
+
+export const sanitizeChannelCall = (msg: string): string => msg.replace('<!channel>', '@channel');
