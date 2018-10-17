@@ -97,6 +97,8 @@ export function* handleSiteDiffStart() {
   } catch (err) {
     _log.error('handleSiteDiffStart - critical error');
     _log.error(err);
+
+    yield put(siteDiffFinish());
   }
 }
 
