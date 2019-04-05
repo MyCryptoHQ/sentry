@@ -117,9 +117,9 @@ export const genGithubAssetSlackMessage = (
       '__',
       '/'
     )}\` have been detected:\n\n` +
-    formatList('Changed files:', changedAssets) +
-    formatList('New files:', newAssets) +
-    formatList('Deleted files:', deletedAssets) +
+    formatList('♻️   Changed files:', changedAssets) +
+    formatList('➕   New files:', newAssets) +
+    formatList('🗑️   Deleted files:', deletedAssets) +
     '\n\n' +
     `Root hash is now \`${rootHash}\``;
   return msg;
